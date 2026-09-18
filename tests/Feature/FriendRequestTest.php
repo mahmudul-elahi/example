@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\FriendRequestStatus;
 use App\Enums\Roles;
+use App\Models\BlockedUser;
 use App\Models\FriendRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -374,4 +375,24 @@ it('lists only accepted friends', function (): void {
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.meta.per_page', 15)
         ->assertJsonCount(2, 'data.items');
+});
+
+it('rejects sending a friend request if either user has blocked the other', function (): void {
+    $sender = User::factory()->withRole(Roles::User)->create();
+    $target = User::factory()->withRole(Roles::User)->create();
+
+    BlockedUser::factory()->blocker($sender)->blocked($target)->create();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $target->id])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('user_id');
+
+    BlockedUser::query()->truncate();
+    BlockedUser::factory()->blocker($target)->blocked($sender)->create();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $target->id])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('user_id');
 });

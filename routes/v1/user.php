@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\User\BlockedUserController;
 use App\Http\Controllers\Api\V1\User\CommentController;
+use App\Http\Controllers\Api\V1\User\ConversationController;
 use App\Http\Controllers\Api\V1\User\FriendRequestController;
 use App\Http\Controllers\Api\V1\User\LikeController;
+use App\Http\Controllers\Api\V1\User\MessageController;
 use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\PetMemorialController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +34,20 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::delete('friend-requests/{friend_request}', [FriendRequestController::class, 'destroy']);
     Route::get('friends', [FriendRequestController::class, 'friends']);
     Route::delete('friends/{friend}', [FriendRequestController::class, 'unfriend']);
+
+    Route::get('users/blocked', [BlockedUserController::class, 'index']);
+    Route::post('users/{user}/block', [BlockedUserController::class, 'block']);
+    Route::delete('users/{user}/block', [BlockedUserController::class, 'unblock']);
+
+    Route::get('conversations', [ConversationController::class, 'index']);
+    Route::post('conversations', [ConversationController::class, 'store']);
+    Route::get('conversations/{conversation}', [ConversationController::class, 'show']);
+    Route::delete('conversations/{conversation}', [ConversationController::class, 'destroy']);
+    Route::post('conversations/{conversation}/read', [ConversationController::class, 'read']);
+
+    Route::get('conversations/{conversation}/messages', [MessageController::class, 'index']);
+    Route::post('conversations/{conversation}/messages', [MessageController::class, 'store']);
+    Route::delete('conversations/{conversation}/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/count', [NotificationController::class, 'count']);

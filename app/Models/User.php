@@ -162,4 +162,34 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->morphMany(Notification::class, 'notifiable')->latest();
     }
+
+    /**
+     * Users blocked by this user.
+     *
+     * @return HasMany<BlockedUser, $this>
+     */
+    public function blockedUsers(): HasMany
+    {
+        return $this->hasMany(BlockedUser::class, 'blocker_id');
+    }
+
+    /**
+     * Blocks placed against this user by other users.
+     *
+     * @return HasMany<BlockedUser, $this>
+     */
+    public function blockedByUsers(): HasMany
+    {
+        return $this->hasMany(BlockedUser::class, 'blocked_id');
+    }
+
+    /**
+     * Conversation memberships of the user.
+     *
+     * @return HasMany<ConversationParticipant, $this>
+     */
+    public function conversationParticipants(): HasMany
+    {
+        return $this->hasMany(ConversationParticipant::class);
+    }
 }

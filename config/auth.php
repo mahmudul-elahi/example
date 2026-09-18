@@ -137,6 +137,8 @@ return [
         'register' => (int) env('AUTH_REGISTER_RATE_LIMIT', 10),
         'password_reset' => (int) env('AUTH_PASSWORD_RESET_RATE_LIMIT', 5),
         'email_verification' => (int) env('AUTH_EMAIL_VERIFICATION_RATE_LIMIT', 5),
+        'passkey_login' => (int) env('AUTH_PASSKEY_LOGIN_RATE_LIMIT', 10),
+        'passkeys' => (int) env('AUTH_PASSKEYS_RATE_LIMIT', 30),
     ],
 
     /*

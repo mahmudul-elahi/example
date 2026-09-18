@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\FriendRequestStatus;
 use App\Models\FriendRequest;
 use App\Models\User;
+use App\Repositories\BlockedUserRepositoryInterface;
 use App\Repositories\FriendRequestRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class FriendRequestService implements FriendRequestServiceInterface
 {
     public function __construct(
         protected FriendRequestRepositoryInterface $repository,
+        protected BlockedUserRepositoryInterface $blockedUsers,
     ) {}
 
     public function send(User $sender, User $receiver): FriendRequest
@@ -23,6 +25,12 @@ class FriendRequestService implements FriendRequestServiceInterface
         if ($sender->is($receiver)) {
             throw ValidationException::withMessages([
                 'user_id' => 'You cannot send a friend request to yourself.',
+            ]);
+        }
+
+        if ($this->blockedUsers->isBlockedEitherWay($sender->id, $receiver->id)) {
+            throw ValidationException::withMessages([
+                'user_id' => 'You cannot send a friend request to this user.',
             ]);
         }
 
