@@ -17,6 +17,7 @@ use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Laravel\Passkeys\Passkey;
 
 #[Group('Auth', weight: 1)]
 class PasskeyController extends Controller
@@ -65,16 +66,16 @@ class PasskeyController extends Controller
         return $this->success(PasskeyResource::collection($passkeys));
     }
 
-    public function update(PasskeyUpdateRequest $request, #[CurrentUser] User $user, int $id): JsonResponse
+    public function update(PasskeyUpdateRequest $request, #[CurrentUser] User $user, Passkey $passkey): JsonResponse
     {
-        $passkey = $this->passkeys->renamePasskey($user, $id, $request->validated('name'));
+        $updated = $this->passkeys->renamePasskey($user, $passkey, $request->validated('name'));
 
-        return $this->success(new PasskeyResource($passkey), 'Passkey updated successfully');
+        return $this->success(new PasskeyResource($updated), 'Passkey updated successfully');
     }
 
-    public function destroy(#[CurrentUser] User $user, int $id): JsonResponse
+    public function destroy(#[CurrentUser] User $user, Passkey $passkey): JsonResponse
     {
-        $this->passkeys->deletePasskey($user, $id);
+        $this->passkeys->deletePasskey($user, $passkey);
 
         return $this->success(null, 'Passkey deleted successfully');
     }

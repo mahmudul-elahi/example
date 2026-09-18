@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Passkeys\Actions\DeletePasskey;
 use Laravel\Passkeys\Actions\GenerateRegistrationOptions;
 use Laravel\Passkeys\Actions\GenerateVerificationOptions;
 use Laravel\Passkeys\Actions\StorePasskey;
@@ -33,6 +34,7 @@ class PasskeyService implements PasskeyServiceInterface
         protected StorePasskey $storePasskey,
         protected GenerateVerificationOptions $generateVerificationOptions,
         protected VerifyPasskey $verifyPasskey,
+        protected DeletePasskey $deletePasskeyAction,
     ) {}
 
     /**
@@ -81,8 +83,10 @@ class PasskeyService implements PasskeyServiceInterface
                 'credential' => [$e->getMessage()],
             ]);
         } catch (Throwable $e) {
+            report($e);
+
             throw ValidationException::withMessages([
-                'credential' => ['Unable to register passkey: '.$e->getMessage()],
+                'credential' => __('Unable to register passkey. Please try again.'),
             ]);
         }
     }
@@ -98,6 +102,12 @@ class PasskeyService implements PasskeyServiceInterface
 
         if (is_string($email) && $email !== '') {
             $user = $this->users->findByEmail($email);
+
+            if (! $user instanceof User || ! $this->passkeys->hasPasskeys($user)) {
+                throw ValidationException::withMessages([
+                    'email' => __('No passkeys are registered for this account.'),
+                ]);
+            }
         }
 
         $options = ($this->generateVerificationOptions)($user);
@@ -144,8 +154,10 @@ class PasskeyService implements PasskeyServiceInterface
                 'credential' => [$e->getMessage()],
             ]);
         } catch (Throwable $e) {
+            report($e);
+
             throw ValidationException::withMessages([
-                'credential' => ['Unable to verify passkey: '.$e->getMessage()],
+                'credential' => __('Unable to verify passkey. Please try again.'),
             ]);
         }
 
@@ -171,25 +183,21 @@ class PasskeyService implements PasskeyServiceInterface
         return $this->passkeys->getForUser($user);
     }
 
-    public function renamePasskey(User $user, int $id, string $newName): Passkey
+    public function renamePasskey(User $user, Passkey $passkey, string $newName): Passkey
     {
-        $passkey = $this->passkeys->findForUser($user, $id);
-
-        if (! $passkey instanceof Passkey) {
-            throw (new ModelNotFoundException)->setModel(Passkey::class, [$id]);
+        if ($passkey->user_id !== $user->id) {
+            throw (new ModelNotFoundException)->setModel(Passkey::class, [$passkey->id]);
         }
 
         return $this->passkeys->rename($passkey, $newName);
     }
 
-    public function deletePasskey(User $user, int $id): void
+    public function deletePasskey(User $user, Passkey $passkey): void
     {
-        $passkey = $this->passkeys->findForUser($user, $id);
-
-        if (! $passkey instanceof Passkey) {
-            throw (new ModelNotFoundException)->setModel(Passkey::class, [$id]);
+        if ($passkey->user_id !== $user->id) {
+            throw (new ModelNotFoundException)->setModel(Passkey::class, [$passkey->id]);
         }
 
-        $this->passkeys->delete($passkey);
+        ($this->deletePasskeyAction)($user, $passkey);
     }
 }

@@ -13,8 +13,8 @@ Route::prefix('auth')->group(function (): void {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
     Route::prefix('passkeys')->group(function (): void {
-        Route::post('login/options', [PasskeyController::class, 'loginOptions'])->middleware('throttle:login');
-        Route::post('login/verify', [PasskeyController::class, 'loginVerify'])->middleware('throttle:login');
+        Route::post('login/options', [PasskeyController::class, 'loginOptions'])->middleware('throttle:passkey-login');
+        Route::post('login/verify', [PasskeyController::class, 'loginVerify'])->middleware('throttle:passkey-login');
     });
 
     Route::post('password/forgot', [PasswordResetController::class, 'sendOtp'])->middleware('throttle:password-reset');
@@ -27,12 +27,12 @@ Route::prefix('auth')->group(function (): void {
         Route::post('email/resend', [EmailVerificationController::class, 'sendOtp'])->middleware('throttle:email-verification');
         Route::get('me', [AuthController::class, 'me']);
 
-        Route::prefix('passkeys')->group(function (): void {
+        Route::prefix('passkeys')->middleware('throttle:passkeys')->group(function (): void {
             Route::get('register/options', [PasskeyController::class, 'registerOptions']);
             Route::post('register/verify', [PasskeyController::class, 'registerVerify']);
             Route::get('/', [PasskeyController::class, 'index']);
-            Route::patch('{id}', [PasskeyController::class, 'update']);
-            Route::delete('{id}', [PasskeyController::class, 'destroy']);
+            Route::patch('{passkey}', [PasskeyController::class, 'update']);
+            Route::delete('{passkey}', [PasskeyController::class, 'destroy']);
         });
     });
 });

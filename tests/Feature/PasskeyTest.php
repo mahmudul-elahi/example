@@ -6,6 +6,8 @@ use App\Models\User;
 use Database\Factories\PasskeyFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Laravel\Passkeys\Events\PasskeyDeleted;
 use Laravel\Passkeys\Passkey;
 
 uses(RefreshDatabase::class);
@@ -104,6 +106,17 @@ it('generates passkey login options with targeted user email', function (): void
         ]);
 });
 
+it('rejects passkey login options when the email has no registered passkeys', function (): void {
+    $user = User::factory()->create();
+
+    $this->postJson('/api/v1/auth/passkeys/login/options', [
+        'email' => $user->email,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors('email');
+});
+
 it('rejects passkey login verification with missing or expired challenge token', function (): void {
     $this->postJson('/api/v1/auth/passkeys/login/verify', [
         'challenge_token' => 'expired-token',
@@ -189,6 +202,8 @@ it('prevents renaming a passkey owned by another user', function (): void {
 });
 
 it('deletes a passkey owned by the authenticated user', function (): void {
+    Event::fake([PasskeyDeleted::class]);
+
     $user = User::factory()->create();
     $passkey = PasskeyFactory::new()->create(['user_id' => $user->id]);
 
@@ -198,7 +213,20 @@ it('deletes a passkey owned by the authenticated user', function (): void {
         ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Passkey deleted successfully');
 
+    Event::assertDispatched(PasskeyDeleted::class);
     expect(Passkey::find($passkey->id))->toBeNull();
+});
+
+it('returns 404 for non-numeric passkey identifiers', function (): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patchJson('/api/v1/auth/passkeys/abc', ['name' => 'Renamed'])
+        ->assertNotFound();
+
+    $this->actingAs($user)
+        ->deleteJson('/api/v1/auth/passkeys/abc')
+        ->assertNotFound();
 });
 
 it('prevents deleting a passkey owned by another user', function (): void {

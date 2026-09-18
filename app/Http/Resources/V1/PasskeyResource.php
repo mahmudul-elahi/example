@@ -21,10 +21,15 @@ class PasskeyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'authenticator' => $this->authenticator,
+            'authenticator' => $this->authenticatorLabel(),
             'last_used_at' => $this->last_used_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    private function authenticatorLabel(): ?string
+    {
+        return $this->resource instanceof Passkey ? $this->resource->authenticator : null;
     }
 }

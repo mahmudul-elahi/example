@@ -27,11 +27,9 @@ class PasskeyRepository implements PasskeyRepositoryInterface
             ->first();
     }
 
-    public function findByCredentialId(string $credentialId): ?Passkey
+    public function hasPasskeys(User $user): bool
     {
-        return Passkey::query()
-            ->where('credential_id', $credentialId)
-            ->first();
+        return $user->passkeys()->exists();
     }
 
     public function rename(Passkey $passkey, string $newName): Passkey
@@ -39,10 +37,5 @@ class PasskeyRepository implements PasskeyRepositoryInterface
         $passkey->update(['name' => $newName]);
 
         return $passkey;
-    }
-
-    public function delete(Passkey $passkey): void
-    {
-        $passkey->delete();
     }
 }

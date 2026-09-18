@@ -21,9 +21,7 @@ interface PasskeyRepositoryInterface
 
     public function findForUser(User $user, int $id): ?Passkey;
 
-    public function findByCredentialId(string $credentialId): ?Passkey;
+    public function hasPasskeys(User $user): bool;
 
     public function rename(Passkey $passkey, string $newName): Passkey;
-
-    public function delete(Passkey $passkey): void;
 }

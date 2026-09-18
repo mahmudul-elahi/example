@@ -48,7 +48,7 @@ interface PasskeyServiceInterface
      */
     public function listUserPasskeys(User $user): Collection;
 
-    public function renamePasskey(User $user, int $id, string $newName): Passkey;
+    public function renamePasskey(User $user, Passkey $passkey, string $newName): Passkey;
 
-    public function deletePasskey(User $user, int $id): void;
+    public function deletePasskey(User $user, Passkey $passkey): void;
 }
