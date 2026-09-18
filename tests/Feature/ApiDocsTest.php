@@ -41,6 +41,9 @@ it('orders the tags by their configured weight', function (): void {
             'User - Shop',
             'User - Comments',
             'User - Likes',
+            'User - Conversations',
+            'User - Messages',
+            'User - Blocks',
             'User - Friends',
             'User - Notifications',
             'Admin - User',
@@ -147,6 +150,22 @@ it('documents the notification endpoints under the User - Notifications tag', fu
         ->and($response->json('paths./v1/notifications/{notification}/read.post.tags'))->toBe(['User - Notifications'])
         ->and($response->json('paths./v1/notifications.get.responses.200.content.application/json.schema.properties.data.properties.items.items.$ref'))
         ->toBe('#/components/schemas/NotificationResource');
+});
+
+it('documents conversation, message, and block endpoints under their tags', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/conversations.get.tags'))->toBe(['User - Conversations'])
+        ->and($response->json('paths./v1/conversations.post.tags'))->toBe(['User - Conversations'])
+        ->and($response->json('paths./v1/conversations/{conversation}.get.tags'))->toBe(['User - Conversations'])
+        ->and($response->json('paths./v1/conversations/{conversation}.delete.tags'))->toBe(['User - Conversations'])
+        ->and($response->json('paths./v1/conversations/{conversation}/read.post.tags'))->toBe(['User - Conversations'])
+        ->and($response->json('paths./v1/conversations/{conversation}/messages.get.tags'))->toBe(['User - Messages'])
+        ->and($response->json('paths./v1/conversations/{conversation}/messages.post.tags'))->toBe(['User - Messages'])
+        ->and($response->json('paths./v1/conversations/{conversation}/messages/{message}.delete.tags'))->toBe(['User - Messages'])
+        ->and($response->json('paths./v1/users/blocked.get.tags'))->toBe(['User - Blocks'])
+        ->and($response->json('paths./v1/users/{user}/block.post.tags'))->toBe(['User - Blocks'])
+        ->and($response->json('paths./v1/users/{user}/block.delete.tags'))->toBe(['User - Blocks']);
 });
 
 it('marks the public blog listing as not requiring a bearer token', function (): void {
