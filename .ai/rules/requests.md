@@ -99,3 +99,18 @@ class UpdatePostRequest extends FormRequest
 ```
 
 A failed `authorize()` returns 403 (mapped in bootstrap/app.php); validation failure returns 422 automatically — both in the ApiResponse envelope.
+
+## Validate role strings against the whitelist
+When a request carries a role value, accept only the `Roles` enum values (`admin` | `user`). Nothing else may ever become a role.
+
+```php
+use App\Enums\Roles;
+use Illuminate\Validation\Rule;
+
+public function rules(): array
+{
+    return [
+        'role' => ['required', 'string', Rule::in(Roles::values())],
+    ];
+}
+```

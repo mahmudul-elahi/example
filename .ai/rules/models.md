@@ -56,3 +56,10 @@ Schema::create('posts', function (Blueprint $table): void {
     $table->index('published_at');
 });
 ```
+
+## Users have exactly one role
+The User model uses Spatie's `HasRoles`, but a user holds at most one role — `Roles::Admin` or `Roles::User` (`.ai/rules/enums.md`). Assign with `setRole(Roles $role)`, which syncs (replaces) the pivot so it never holds more than one row. Never call the multi-role API (`assignRole` with several roles, `syncRoles` with a list) on User.
+
+Read the role name as a string with `$user->role` (`null` when unassigned), or use `$user->isAdmin()`. Route protection uses the `role` middleware alias (see `.ai/rules/routes.md`); permission checks use `$user->can()`.
+
+This is an API-only application: the default auth guard is `sanctum`, so roles and permission checks are stored and matched under the `sanctum` guard. Do not introduce a second guard for roles.

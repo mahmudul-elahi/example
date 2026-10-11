@@ -74,3 +74,14 @@ Route::prefix('v1')->group(function (): void {
     });
 });
 ```
+
+## Protect admin endpoints with the role middleware
+Admin-only endpoints combine Sanctum auth with the `role` middleware alias. Only `Roles` enum values are valid arguments (`admin` | `user`), and users hold a single role.
+
+```php
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
+    Route::apiResource('posts', PostController::class);
+});
+```
+
+Use `role_or_permission:admin,user` for OR semantics. Prefer per-action authorization in the Form Request's `authorize()` (`.ai/rules/requests.md`); the role middleware protects whole groups.
