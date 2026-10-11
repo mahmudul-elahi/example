@@ -42,8 +42,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::apiResource('posts', PostController::class);
 
-// Explicit routes when you need to name them:
-Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
+// Explicit single-action routes:
+Route::get('posts/{post}', [PostController::class, 'show']);
 
 // Route groups (auth, versioning, prefix):
 Route::middleware('auth:sanctum')->prefix('v1')->group(function (): void {
@@ -52,6 +52,17 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function (): void {
 ```
 
 Controller methods therefore use implicit route model binding (`Post $post`).
+
+## Do not name API routes
+This is an API-only application: there is no Blade, redirect, or `route()` call that generates URLs, so route names serve no purpose. Never add `->name()` to a route in routes/api.php — the HTTP method + URI is the contract. Named routes are reserved for URL generation between pages, which this app does not have.
+
+```php
+// Correct
+Route::post('login', [AuthController::class, 'login']);
+
+// Wrong — no consumer resolves route names in an API
+Route::post('login', [AuthController::class, 'login'])->name('auth.login');
+```
 
 ## Mount versioned API route groups
 Mount versioned groups in routes/api.php, e.g. Route::prefix('v1')->group(...) wrapping apiResource routes. Do not add unversioned API endpoints.
