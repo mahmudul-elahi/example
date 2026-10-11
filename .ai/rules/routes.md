@@ -96,3 +96,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
 ```
 
 Use `role_or_permission:admin,user` for OR semantics. Prefer per-action authorization in the Form Request's `authorize()` (`.ai/rules/requests.md`); the role middleware protects whole groups.
+
+## Throttle the public auth endpoints
+Login and registration are unauthenticated, so protect them with the named rate limiters defined in AppServiceProvider (`login` keyed by email + IP, `register` keyed by IP). Limits come from `config('auth.rate_limits')` and are overridable with `AUTH_LOGIN_RATE_LIMIT` / `AUTH_REGISTER_RATE_LIMIT`.
+
+```php
+Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+```
+
+A throttled request returns 429 in the standard error envelope. Raise the limit env vars when load/stress testing, which otherwise stops at the per-minute cap.

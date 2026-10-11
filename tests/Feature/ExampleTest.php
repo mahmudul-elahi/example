@@ -1,7 +1,7 @@
 <?php
 
-test('the application returns a successful response', function (): void {
-    $response = $this->get('/');
+declare(strict_types=1);
 
-    $response->assertStatus(200);
+it('does not serve the root path in this API-only application', function (): void {
+    $this->get('/')->assertNotFound();
 });

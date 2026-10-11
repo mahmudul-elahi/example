@@ -127,3 +127,24 @@ it('logs out and revokes the issued token', function (): void {
         ->getJson('/api/v1/auth/me')
         ->assertUnauthorized();
 });
+
+it('throttles repeated login attempts', function (): void {
+    User::factory()->create([
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+    ]);
+
+    for ($attempt = 1; $attempt <= 5; $attempt++) {
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'jane@example.com',
+            'password' => 'password123',
+        ])->assertOk();
+    }
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+    ])
+        ->assertStatus(429)
+        ->assertJsonPath('success', false);
+});

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -19,7 +21,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
@@ -37,21 +38,26 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $exceptions->render(function (Throwable $e, Request $request): JsonResponse {
-            $status = match (true) {
-                $e instanceof ValidationException => Response::HTTP_UNPROCESSABLE_ENTITY,
-                $e instanceof AuthenticationException => Response::HTTP_UNAUTHORIZED,
+            [$status, $message] = match (true) {
+                $e instanceof ValidationException => [Response::HTTP_UNPROCESSABLE_ENTITY, $e->getMessage()],
+                $e instanceof AuthenticationException => [Response::HTTP_UNAUTHORIZED, $e->getMessage()],
                 $e instanceof AccessDeniedHttpException,
-                $e instanceof AuthorizationException => Response::HTTP_FORBIDDEN,
-                $e instanceof NotFoundHttpException,
-                $e instanceof ModelNotFoundException => Response::HTTP_NOT_FOUND,
-                $e instanceof HttpExceptionInterface => $e->getStatusCode(),
-                default => Response::HTTP_INTERNAL_SERVER_ERROR,
+                $e instanceof AuthorizationException => [Response::HTTP_FORBIDDEN, $e->getMessage()],
+                $e instanceof ModelNotFoundException => [Response::HTTP_NOT_FOUND, 'Resource not found'],
+                $e instanceof NotFoundHttpException => [Response::HTTP_NOT_FOUND, $e->getMessage()],
+                $e instanceof HttpExceptionInterface => [$e->getStatusCode(), $e->getMessage()],
+                default => [Response::HTTP_INTERNAL_SERVER_ERROR, config('app.debug') ? $e->getMessage() : 'Server Error'],
             };
 
-            return response()->json([
+            $payload = [
                 'success' => false,
-                'message' => $e->getMessage(),
-                'errors' => $e instanceof ValidationException ? $e->errors() : [],
-            ], $status);
+                'message' => $message,
+            ];
+
+            if ($e instanceof ValidationException) {
+                $payload['errors'] = $e->errors();
+            }
+
+            return response()->json($payload, $status);
         });
     })->create();

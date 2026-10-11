@@ -6,7 +6,7 @@ paths:
 # Models
 
 ## Model and migration conventions
-Models live in app/Models (singular, StudlyCase) with $fillable, $casts(), and typed relationship methods. Migrations use plural snake_case tables, foreignId()->constrained(), and indexes on foreign/filtered columns. No queries in controllers or resources.
+Models live in app/Models (singular, StudlyCase) and declare mass assignment / serialization with Laravel's model attributes (`#[Fillable([...])]`, `#[Hidden([...])]`, `Illuminate\Database\Eloquent\Attributes\*`), a `casts()` method, and typed relationship methods. Migrations use plural snake_case tables, foreignId()->constrained(), and indexes on foreign/filtered columns. No queries in controllers or resources.
 
 ## Example
 
@@ -15,17 +15,16 @@ Model — `app/Models/Post.php`
 ```php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable(['title', 'body', 'user_id', 'published_at'])]
 class Post extends Model
 {
     /** @use HasFactory<\Database\Factories\PostFactory> */
     use HasFactory;
-
-    /** @var list<string> */
-    protected $fillable = ['title', 'body', 'user_id', 'published_at'];
 
     /** @return array<string, string> */
     protected function casts(): array

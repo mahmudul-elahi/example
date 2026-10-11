@@ -28,3 +28,23 @@ class AppServiceProvider extends ServiceProvider
 ```
 
 Without this, `new PostResource($post)` would render as `data: { data: { ... } }`.
+
+## Define named rate limiters here
+Register named rate limiters for public endpoints in `AppServiceProvider::boot()` with `RateLimiter::for()`. Keep the per-minute values in `config/auth.php` (`auth.rate_limits`) rather than hardcoding them, so they stay tunable per environment and overridable in tests.
+
+```php
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+
+public function boot(): void
+{
+    JsonResource::withoutWrapping();
+
+    RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(
+        (int) config('auth.rate_limits.login'),
+    )->by($request->input('email').'|'.$request->ip()));
+}
+```
+
+Apply them from routes with `->middleware('throttle:login')` (`.ai/rules/routes.md`).
