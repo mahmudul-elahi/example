@@ -5,6 +5,18 @@ paths:
 
 # Controllers
 
+## Group a feature's controllers
+Put a feature's controllers in a subfolder matching its route file (routes/v1/{feature}.php), e.g. App\Http\Controllers\Api\V1\Auth for the auth feature. When a feature spans several controllers, annotate each with the same Scramble `#[Group('...')]` attribute so all of its endpoints share one tag in the API docs.
+
+```php
+namespace App\Http\Controllers\Api\V1\Auth;
+
+use Dedoc\Scramble\Attributes\Group;
+
+#[Group('Auth')]
+class AuthController extends Controller
+```
+
 ## Return responses via the ApiResponse trait
 Controllers use `App\Traits\ApiResponse` and respond only through its helpers: `success()`, `created()`, `noContent()`, `error()`, `notFound()`, `unauthorized()`, `forbidden()`, `validationError()`. Keep the envelope `{ success, message, data }` (with `errors` added when present). Never call `response()->json()` directly in a controller.
 

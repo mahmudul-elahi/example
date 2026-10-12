@@ -6,7 +6,7 @@ paths:
 # Routes
 
 ## API-only application
-This project serves JSON APIs only. Register endpoints in routes/api.php (wired up in bootstrap/app.php) — never add Blade views, web routes, or `view()` responses. Every endpoint returns JSON.
+This project serves JSON APIs only. Register endpoints in the matching routes/v1/{feature}.php file (mounted from routes/api.php, wired up in bootstrap/app.php) — never add Blade views, web routes, or `view()` responses. Every endpoint returns JSON.
 
 ## Example
 
@@ -34,10 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })->create();
 ```
 
-**routes/api.php** — every model gets an API resource route:
+**routes/v1/posts.php** — every model gets an API resource route (loaded from routes/api.php):
 
 ```php
-use App\Http\Controllers\PostController;
+use App\Http\Controllers\Api\V1\PostController;
 use Illuminate\Support\Facades\Route;
 
 Route::apiResource('posts', PostController::class);
@@ -45,8 +45,8 @@ Route::apiResource('posts', PostController::class);
 // Explicit single-action routes:
 Route::get('posts/{post}', [PostController::class, 'show']);
 
-// Route groups (auth, versioning, prefix):
-Route::middleware('auth:sanctum')->prefix('v1')->group(function (): void {
+// Route groups (auth, middleware, prefix):
+Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('posts', PostController::class);
 });
 ```
@@ -54,7 +54,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function (): void {
 Controller methods therefore use implicit route model binding (`Post $post`).
 
 ## Do not name API routes
-This is an API-only application: there is no Blade, redirect, or `route()` call that generates URLs, so route names serve no purpose. Never add `->name()` to a route in routes/api.php — the HTTP method + URI is the contract. Named routes are reserved for URL generation between pages, which this app does not have.
+This is an API-only application: there is no Blade, redirect, or `route()` call that generates URLs, so route names serve no purpose. Never add `->name()` to a route in routes/v1/*.php — the HTTP method + URI is the contract. Named routes are reserved for URL generation between pages, which this app does not have.
 
 ```php
 // Correct
@@ -65,24 +65,45 @@ Route::post('login', [AuthController::class, 'login'])->name('auth.login');
 ```
 
 ## Mount versioned API route groups
-Mount versioned groups in routes/api.php, e.g. Route::prefix('v1')->group(...) wrapping apiResource routes. Do not add unversioned API endpoints.
+Keep routes/api.php as the only route entrypoint: it mounts each version prefix and loads one file per feature from the matching routes/v1/ folder. Do not add unversioned API endpoints, and do not inline feature routes in routes/api.php.
+
+`routes/api.php`
+
+```php
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1')->group([
+    __DIR__.'/v1/auth.php',
+]);
+```
+
+`routes/v1/auth.php`
+
+```php
+use App\Http\Controllers\Api\V1\Auth\AuthController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('auth')->group(function (): void {
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+});
+```
+
+Create a new routes/v1/{feature}.php file per feature and append it to the version's file list in routes/api.php. Group a feature's related routes (e.g. auth, password reset, email verification) inside that one file.
 
 ## Versioned example
 
-`routes/api.php`
+`routes/v1/posts.php`
 
 ```php
 use App\Http\Controllers\Api\V1\PostController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->group(function (): void {
-    // Public routes
-    Route::apiResource('posts', PostController::class)->only(['index', 'show']);
+// Public routes
+Route::apiResource('posts', PostController::class)->only(['index', 'show']);
 
-    // Authenticated routes
-    Route::middleware('auth:sanctum')->group(function (): void {
-        Route::apiResource('posts', PostController::class)->except(['index', 'show']);
-    });
+// Authenticated routes
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('posts', PostController::class)->except(['index', 'show']);
 });
 ```
 
