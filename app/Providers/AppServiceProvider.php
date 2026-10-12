@@ -34,5 +34,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('register', fn (Request $request): Limit => Limit::perMinute(
             (int) config('auth.rate_limits.register'),
         )->by($request->ip()));
+
+        RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(
+            (int) config('auth.rate_limits.password_reset'),
+        )->by($request->input('email').'|'.$request->ip()));
+
+        RateLimiter::for('email-verification', fn (Request $request): Limit => Limit::perMinute(
+            (int) config('auth.rate_limits.email_verification'),
+        )->by($request->user()?->getAuthIdentifier().'|'.$request->ip()));
     }
 }

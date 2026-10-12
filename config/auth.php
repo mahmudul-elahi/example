@@ -135,6 +135,25 @@ return [
     'rate_limits' => [
         'login' => (int) env('AUTH_LOGIN_RATE_LIMIT', 5),
         'register' => (int) env('AUTH_REGISTER_RATE_LIMIT', 10),
+        'password_reset' => (int) env('AUTH_PASSWORD_RESET_RATE_LIMIT', 5),
+        'email_verification' => (int) env('AUTH_EMAIL_VERIFICATION_RATE_LIMIT', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | One-Time Passwords
+    |--------------------------------------------------------------------------
+    |
+    | Controls the 5-digit codes emailed for password resets and email
+    | verification. "expire" is the validity window in minutes, and
+    | "max_attempts" caps how many wrong attempts invalidate a code.
+    |
+    */
+
+    'otp' => [
+        'digits' => (int) env('AUTH_OTP_DIGITS', 5),
+        'expire' => (int) env('AUTH_OTP_EXPIRE', 15),
+        'max_attempts' => (int) env('AUTH_OTP_MAX_ATTEMPTS', 3),
     ],
 
 ];
