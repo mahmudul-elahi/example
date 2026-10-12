@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\VerifyEmailRequest;
 use App\Http\Resources\V1\UserResource;
 use App\Services\EmailVerificationServiceInterface;
 use App\Traits\ApiResponse;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('Auth')]
 class EmailVerificationController extends Controller
 {
     use ApiResponse;
