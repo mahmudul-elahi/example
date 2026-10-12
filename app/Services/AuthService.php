@@ -16,6 +16,7 @@ class AuthService implements AuthServiceInterface
 {
     public function __construct(
         protected UserRepositoryInterface $users,
+        protected EmailVerificationServiceInterface $emailVerification,
     ) {}
 
     /**
@@ -24,15 +25,21 @@ class AuthService implements AuthServiceInterface
      */
     public function register(array $data): array
     {
-        return DB::transaction(function () use ($data): array {
+        $user = DB::transaction(function () use ($data): User {
             $user = $this->users->create($data);
             $user->setRole(Roles::User);
 
-            return [
-                'user' => $this->users->loadRoles($user),
-                'token' => $user->createToken('auth-token')->plainTextToken,
-            ];
+            return $user;
         });
+
+        $user = $this->users->loadRoles($user);
+
+        $this->emailVerification->sendOtp($user);
+
+        return [
+            'user' => $user,
+            'token' => $user->createToken('auth-token')->plainTextToken,
+        ];
     }
 
     /**

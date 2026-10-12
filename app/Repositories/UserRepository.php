@@ -28,4 +28,10 @@ class UserRepository implements UserRepositoryInterface
     {
         return $user->load('roles');
     }
+
+    public function updatePassword(User $user, string $password): void
+    {
+        // The User model's "hashed" cast keeps the plain value hashed on save.
+        $user->update(['password' => $password]);
+    }
 }

@@ -20,4 +20,6 @@ interface UserRepositoryInterface
     public function create(array $data): User;
 
     public function loadRoles(User $user): User;
+
+    public function updatePassword(User $user, string $password): void;
 }
