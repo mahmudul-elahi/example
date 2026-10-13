@@ -9,14 +9,16 @@ use Database\Factories\OtpCodeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property-read int $user_id
  * @property-read OtpPurpose $purpose
  * @property-read Carbon $expires_at
  * @property-read Carbon|null $consumed_at
  */
-#[Fillable(['email', 'purpose', 'code', 'attempts', 'expires_at', 'consumed_at'])]
+#[Fillable(['user_id', 'purpose', 'code', 'attempts', 'expires_at', 'consumed_at'])]
 class OtpCode extends Model
 {
     /** @use HasFactory<OtpCodeFactory> */
@@ -34,6 +36,14 @@ class OtpCode extends Model
             'expires_at' => 'datetime',
             'consumed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function isExpired(): bool

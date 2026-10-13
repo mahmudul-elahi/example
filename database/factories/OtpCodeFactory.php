@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\OtpPurpose;
 use App\Models\OtpCode;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
@@ -22,7 +23,7 @@ class OtpCodeFactory extends Factory
     public function definition(): array
     {
         return [
-            'email' => fake()->unique()->safeEmail(),
+            'user_id' => User::factory(),
             'purpose' => OtpPurpose::EmailVerification,
             'code' => Hash::make('12345'),
             'attempts' => 0,
