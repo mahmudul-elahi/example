@@ -19,10 +19,45 @@ it('renders the API reference with the Scalar UI', function (): void {
 it('groups the authentication endpoints under a single Auth tag', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect(array_column($response->json('tags'), 'name'))->toBe(['Auth'])
+    expect(array_column($response->json('tags'), 'name'))->toContain('Auth')
         ->and($response->json('paths./v1/auth/me.get.tags'))->toBe(['Auth'])
         ->and($response->json('paths./v1/auth/login.post.tags'))->toBe(['Auth'])
         ->and($response->json('paths./v1/auth/password/reset.post.tags'))->toBe(['Auth']);
+});
+
+it('orders the tags Auth, then Admin - User, then Admin - Dashboard', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect(array_column($response->json('tags'), 'name'))
+        ->toBe(['Auth', 'Admin - User', 'Admin - Dashboard']);
+});
+
+it('documents the admin dashboard endpoint under the Admin - Dashboard tag', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect(array_column($response->json('tags'), 'name'))->toContain('Admin - Dashboard')
+        ->and($response->json('paths./v1/admin/dashboard.get.tags'))->toBe(['Admin - Dashboard'])
+        ->and($response->json('paths./v1/admin/dashboard.get.security'))->toBeNull();
+});
+
+it('documents the admin user management endpoints under the Admin - User tag', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/admin/users.get.tags'))->toBe(['Admin - User'])
+        ->and($response->json('paths./v1/admin/users.post.tags'))->toBe(['Admin - User'])
+        ->and($response->json('paths./v1/admin/users/{user}.get.tags'))->toBe(['Admin - User'])
+        ->and($response->json('paths./v1/admin/users/{user}.put.tags'))->toBe(['Admin - User'])
+        ->and($response->json('paths./v1/admin/users/{user}.delete.tags'))->toBe(['Admin - User']);
+});
+
+it('documents the admin user list items as UserResource', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/admin/users.get.responses.200.content.application/json.schema.properties.data.properties.items'))
+        ->toBe([
+            'type' => 'array',
+            'items' => ['$ref' => '#/components/schemas/UserResource'],
+        ]);
 });
 
 it('documents a bearer token security scheme', function (): void {

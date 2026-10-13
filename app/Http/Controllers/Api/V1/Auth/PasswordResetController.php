@@ -13,7 +13,7 @@ use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 
-#[Group('Auth')]
+#[Group('Auth', weight: 1)]
 class PasswordResetController extends Controller
 {
     use ApiResponse;

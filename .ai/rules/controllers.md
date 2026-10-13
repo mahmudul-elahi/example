@@ -13,12 +13,12 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use Dedoc\Scramble\Attributes\Group;
 
-#[Group('Auth')]
+#[Group('Auth', weight: 1)]
 class AuthController extends Controller
 ```
 
 ## Return responses via the ApiResponse trait
-Controllers use `App\Traits\ApiResponse` and respond only through its helpers: `success()`, `created()`, `noContent()`, `error()`, `notFound()`, `unauthorized()`, `forbidden()`, `validationError()`. Keep the envelope `{ success, message, data }` (with `errors` added when present). Never call `response()->json()` directly in a controller.
+Controllers use `App\Traits\ApiResponse` and respond only through its helpers: `success()`, `created()`, `error()`, `notFound()`, `unauthorized()`, `forbidden()`, `validationError()`. Keep the envelope `{ success, message, data }` (with `errors` added when present) on every response, including actions that return no data such as delete and logout (HTTP 200, `data: null`). Never call `response()->json()` directly in a controller.
 
 ## Example
 
@@ -67,7 +67,7 @@ class PostController extends Controller
     {
         $this->posts->delete($post);
 
-        return $this->noContent();
+        return $this->success(null, 'Post deleted successfully');
     }
 }
 ```
@@ -90,3 +90,6 @@ Controller: validate (Form Request) -> call service -> wrap in Resource -> respo
 | Repository | Eloquent queries, eager loading | business rules, HTTP |
 | Form Request | validation + authorization | business logic |
 | Resource | shaping output | queries, business logic |
+
+## Order API doc tags with #[Group] weight
+Scramble orders document tags by ascending `#[Group('Name', weight: N)]` weight (default is `PHP_INT_MAX`, so weightless groups sort last). Allocate weight bands per feature so future groups slot in without renumbering: Auth `1`, User `2–100`, Admin `100–200`. Current values: `Auth` 1, `Admin - User` 100, `Admin - Dashboard` 110. Controllers sharing one tag must all use the same weight — the first non-null weight Scramble encounters for a tag wins.

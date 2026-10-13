@@ -14,7 +14,7 @@ use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-#[Group('Auth')]
+#[Group('Auth', weight: 1)]
 class AuthController extends Controller
 {
     use ApiResponse;
