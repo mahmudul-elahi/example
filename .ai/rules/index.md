@@ -4,16 +4,17 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| app/** | .ai/rules/app.md |
 | bootstrap/** | .ai/rules/bootstrap.md |
-| app/Enums/** | .ai/rules/enums.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
+| app/Enums/** | .ai/rules/enums.md |
 | app/Http/** | .ai/rules/http.md |
 | app/Models/** | .ai/rules/models.md |
 | app/Providers/** | .ai/rules/providers.md |
+| **/*.php | .ai/rules/rector.md |
 | app/Repositories/** | .ai/rules/repositories.md |
 | app/Http/Requests/** | .ai/rules/requests.md |
 | app/Http/Resources/** | .ai/rules/resources.md |
 | routes/** | .ai/rules/routes.md |
 | app/Services/** | .ai/rules/services.md |
 | tests/** | .ai/rules/tests.md |
-| **/*.php | .ai/rules/rector.md |
