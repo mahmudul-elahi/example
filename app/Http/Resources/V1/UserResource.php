@@ -10,6 +10,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @mixin User
+ *
+ * @property string|null $avatar_url
  */
 class UserResource extends JsonResource
 {
@@ -22,6 +24,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'avatar' => $this->avatar_url,
             'role' => $this->role,
             'email_verified' => $this->hasVerifiedEmail(),
             'created_at' => $this->created_at?->toIso8601String(),

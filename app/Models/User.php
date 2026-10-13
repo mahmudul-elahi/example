@@ -13,11 +13,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Models\Role as RoleModel;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'avatar'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -58,5 +59,17 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function role(): Attribute
     {
         return Attribute::make(get: fn () => $this->roles->first()?->name);
+    }
+
+    /**
+     * The absolute URL of the user's avatar, or null when none is set.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?string => $this->avatar === null ? null : Storage::url($this->avatar),
+        );
     }
 }

@@ -43,6 +43,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user has an avatar stored at the given path.
+     */
+    public function withAvatar(string $path): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'avatar' => $path,
+        ]);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static
