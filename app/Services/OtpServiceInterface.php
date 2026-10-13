@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\OtpPurpose;
 use App\Models\OtpCode;
+use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Validation\ValidationException;
@@ -15,12 +16,12 @@ use Illuminate\Validation\ValidationException;
 interface OtpServiceInterface
 {
     /**
-     * Issue a fresh one-time code for the email/purpose and return its plain-text value.
+     * Issue a fresh one-time code for the user/purpose and return its plain-text value.
      *
      * The plain value is only ever available to the caller (to place in a notification);
      * a hash is what gets persisted.
      */
-    public function generate(string $email, OtpPurpose $purpose): string;
+    public function generate(User $user, OtpPurpose $purpose): string;
 
     /**
      * Check that a code is valid without consuming it. Wrong attempts still count
@@ -29,7 +30,7 @@ interface OtpServiceInterface
      * @throws ValidationException when the code is invalid, expired,
      *                             already used, or has too many attempts.
      */
-    public function validate(string $email, OtpPurpose $purpose, string $code): OtpCode;
+    public function validate(User $user, OtpPurpose $purpose, string $code): OtpCode;
 
     /**
      * Verify a code, consuming it on success.
@@ -37,5 +38,5 @@ interface OtpServiceInterface
      * @throws ValidationException when the code is invalid, expired,
      *                             already used, or has too many attempts.
      */
-    public function verify(string $email, OtpPurpose $purpose, string $code): void;
+    public function verify(User $user, OtpPurpose $purpose, string $code): void;
 }

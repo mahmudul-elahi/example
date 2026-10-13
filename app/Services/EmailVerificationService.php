@@ -21,7 +21,7 @@ class EmailVerificationService implements EmailVerificationServiceInterface
             return;
         }
 
-        $code = $this->otps->generate($user->email, OtpPurpose::EmailVerification);
+        $code = $this->otps->generate($user, OtpPurpose::EmailVerification);
 
         $user->notify(new EmailVerificationOtpNotification(
             $code,
@@ -40,7 +40,7 @@ class EmailVerificationService implements EmailVerificationServiceInterface
             return;
         }
 
-        $this->otps->verify($user->email, OtpPurpose::EmailVerification, $code);
+        $this->otps->verify($user, OtpPurpose::EmailVerification, $code);
 
         $user->markEmailAsVerified();
     }

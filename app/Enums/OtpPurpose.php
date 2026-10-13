@@ -6,7 +6,7 @@ namespace App\Enums;
 
 /**
  * The reasons an OTP code may be issued for. Each purpose keeps its own
- * current code per email, so a reset code can never verify an email.
+ * current code per user, so a reset code can never verify an email.
  */
 enum OtpPurpose: string
 {

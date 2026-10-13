@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\OtpPurpose;
 use App\Models\OtpCode;
+use App\Models\User;
 use App\Repositories\OtpCodeRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -16,12 +17,12 @@ class OtpService implements OtpServiceInterface
         protected OtpCodeRepositoryInterface $otps,
     ) {}
 
-    public function generate(string $email, OtpPurpose $purpose): string
+    public function generate(User $user, OtpPurpose $purpose): string
     {
         $code = $this->randomCode();
 
         $this->otps->createFor(
-            $email,
+            $user,
             $purpose,
             Hash::make($code),
             now()->addMinutes((int) config('auth.otp.expire')),
@@ -30,9 +31,9 @@ class OtpService implements OtpServiceInterface
         return $code;
     }
 
-    public function validate(string $email, OtpPurpose $purpose, string $code): OtpCode
+    public function validate(User $user, OtpPurpose $purpose, string $code): OtpCode
     {
-        $otp = $this->otps->findActive($email, $purpose);
+        $otp = $this->otps->findActive($user, $purpose);
 
         if (
             ! $otp instanceof OtpCode
@@ -51,9 +52,9 @@ class OtpService implements OtpServiceInterface
         return $otp;
     }
 
-    public function verify(string $email, OtpPurpose $purpose, string $code): void
+    public function verify(User $user, OtpPurpose $purpose, string $code): void
     {
-        $this->otps->markConsumed($this->validate($email, $purpose, $code));
+        $this->otps->markConsumed($this->validate($user, $purpose, $code));
     }
 
     private function randomCode(): string
