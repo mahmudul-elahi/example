@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Enums\OtpPurpose;
 use App\Models\OtpCode;
+use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Support\Carbon;
@@ -15,14 +16,14 @@ use Illuminate\Support\Carbon;
 interface OtpCodeRepositoryInterface
 {
     /**
-     * Replace any existing code for the email/purpose with a freshly issued one.
+     * Replace any existing code for the user/purpose with a freshly issued one.
      */
-    public function createFor(string $email, OtpPurpose $purpose, string $hashedCode, Carbon $expiresAt): OtpCode;
+    public function createFor(User $user, OtpPurpose $purpose, string $hashedCode, Carbon $expiresAt): OtpCode;
 
     /**
-     * The most recently issued, not-yet-consumed code for the email/purpose.
+     * The most recently issued, not-yet-consumed code for the user/purpose.
      */
-    public function findActive(string $email, OtpPurpose $purpose): ?OtpCode;
+    public function findActive(User $user, OtpPurpose $purpose): ?OtpCode;
 
     public function incrementAttempts(OtpCode $otpCode): void;
 
