@@ -127,6 +127,26 @@ it('rejects an invalid code on the verify step', function (): void {
         ->assertJsonValidationErrors(['otp' => 'The provided code is invalid or has expired.']);
 });
 
+it('rejects a verify for an unregistered email', function (): void {
+    $this->postJson('/api/v1/auth/password/verify', [
+        'email' => 'nobody@example.com',
+        'otp' => '00000',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['otp' => 'The provided code is invalid or has expired.']);
+});
+
+it('rejects a reset for an unregistered email', function (): void {
+    $this->postJson('/api/v1/auth/password/reset', [
+        'email' => 'nobody@example.com',
+        'otp' => '00000',
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['otp' => 'The provided code is invalid or has expired.']);
+});
+
 it('validates the verify payload', function (): void {
     $this->postJson('/api/v1/auth/password/verify', [])
         ->assertUnprocessable()

@@ -32,7 +32,7 @@ class PasswordResetService implements PasswordResetServiceInterface
             return;
         }
 
-        $code = $this->otps->generate($email, OtpPurpose::PasswordReset);
+        $code = $this->otps->generate($user, OtpPurpose::PasswordReset);
 
         $user->notify(new PasswordResetOtpNotification(
             $code,
@@ -48,7 +48,7 @@ class PasswordResetService implements PasswordResetServiceInterface
      */
     public function verifyOtp(string $email, string $code): void
     {
-        $this->otps->validate($email, OtpPurpose::PasswordReset, $code);
+        $this->otps->validate($this->userOrFail($email), OtpPurpose::PasswordReset, $code);
     }
 
     /**
@@ -56,19 +56,35 @@ class PasswordResetService implements PasswordResetServiceInterface
      */
     public function reset(string $email, string $code, string $password): void
     {
-        $this->otps->verify($email, OtpPurpose::PasswordReset, $code);
+        $user = $this->userOrFail($email);
 
-        $user = $this->users->findByEmail($email);
-
-        if (! $user instanceof User) {
-            throw ValidationException::withMessages([
-                'otp' => 'The provided code is invalid or has expired.',
-            ]);
-        }
+        $this->otps->verify($user, OtpPurpose::PasswordReset, $code);
 
         DB::transaction(function () use ($user, $password): void {
             $this->users->updatePassword($user, $password);
             $user->tokens()->delete();
         });
+    }
+
+    /**
+     * @throws ValidationException when no user owns the email, reusing the invalid
+     *                             code message so the endpoint cannot enumerate accounts.
+     */
+    private function userOrFail(string $email): User
+    {
+        $user = $this->users->findByEmail($email);
+
+        if (! $user instanceof User) {
+            throw $this->invalidCode();
+        }
+
+        return $user;
+    }
+
+    private function invalidCode(): ValidationException
+    {
+        return ValidationException::withMessages([
+            'otp' => 'The provided code is invalid or has expired.',
+        ]);
     }
 }
