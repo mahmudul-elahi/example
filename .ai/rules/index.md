@@ -17,4 +17,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Resources/** | .ai/rules/resources.md |
 | routes/** | .ai/rules/routes.md |
 | app/Services/** | .ai/rules/services.md |
+| app/Notifications/** | .ai/rules/notifications.md |
+| resources/views/emails/** | .ai/rules/notifications.md |
 | tests/** | .ai/rules/tests.md |

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class EmailVerificationOtpNotification extends Notification
+class EmailVerificationOtpNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -30,12 +31,14 @@ class EmailVerificationOtpNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $data = [
+            'code' => $this->code,
+            'expiresInMinutes' => $this->expiresInMinutes,
+        ];
+
         return (new MailMessage)
             ->subject('Verify your email address')
-            ->greeting('Welcome!')
-            ->line('Use the code below to verify your email address:')
-            ->line($this->code)
-            ->line('This code expires in '.$this->expiresInMinutes.' minutes.')
-            ->line('If you did not create an account, you can safely ignore this email.');
+            ->view('emails.auth.verify-email-otp', $data)
+            ->text('emails.auth.verify-email-otp-text', $data);
     }
 }

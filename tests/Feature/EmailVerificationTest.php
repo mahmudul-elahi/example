@@ -132,3 +132,18 @@ it('requires authentication for verification endpoints', function (): void {
     $this->postJson('/api/v1/auth/email/resend')
         ->assertUnauthorized();
 });
+
+it('renders the verification email from a custom view', function (): void {
+    $user = User::factory()->unverified()->create();
+
+    $mail = (new EmailVerificationOtpNotification('12345', 15))->toMail($user);
+
+    expect($mail->view)->toBe([
+        'html' => 'emails.auth.verify-email-otp',
+        'text' => 'emails.auth.verify-email-otp-text',
+    ])
+        ->and($mail->render())
+        ->toContain('Verify your email address')
+        ->toContain('12345')
+        ->toContain('15 minutes');
+});

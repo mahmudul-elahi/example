@@ -232,3 +232,18 @@ it('throttles password reset requests per email', function (): void {
         ->assertStatus(429)
         ->assertJsonPath('success', false);
 });
+
+it('renders the password reset email from a custom view', function (): void {
+    $user = User::factory()->create();
+
+    $mail = (new PasswordResetOtpNotification('54321', 15))->toMail($user);
+
+    expect($mail->view)->toBe([
+        'html' => 'emails.auth.reset-password-otp',
+        'text' => 'emails.auth.reset-password-otp-text',
+    ])
+        ->and($mail->render())
+        ->toContain('Reset your password')
+        ->toContain('54321')
+        ->toContain('15 minutes');
+});
