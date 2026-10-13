@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Symfony\Component\HttpFoundation\Response;
 
 trait ApiResponse
@@ -21,16 +23,31 @@ trait ApiResponse
         ], $code);
     }
 
+    /**
+     * @param  LengthAwarePaginator<int, mixed>  $paginator
+     */
+    protected function paginated(
+        LengthAwarePaginator $paginator,
+        JsonResource $items,
+        string $message = 'Success',
+        int $code = Response::HTTP_OK
+    ): JsonResponse {
+        return $this->success([
+            'items' => $items,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
+        ], $message, $code);
+    }
+
     protected function created(
         mixed $data = null,
         string $message = 'Resource created successfully'
     ): JsonResponse {
         return $this->success($data, $message, Response::HTTP_CREATED);
-    }
-
-    protected function noContent(): JsonResponse
-    {
-        return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
     /**
