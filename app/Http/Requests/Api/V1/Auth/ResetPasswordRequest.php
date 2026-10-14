@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Api\V1;
+namespace App\Http\Requests\Api\V1\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class RegisterRequest extends FormRequest
+class ResetPasswordRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -20,8 +19,8 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'email' => ['required', 'string', 'email'],
+            'otp' => ['required', 'string', 'digits:'.config('auth.otp.digits')],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
