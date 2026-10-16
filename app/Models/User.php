@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -71,5 +72,55 @@ class User extends Authenticatable implements MustVerifyEmail
         return Attribute::make(
             get: fn (): ?string => $this->avatar === null ? null : Storage::url($this->avatar),
         );
+    }
+
+    /**
+     * The pet memorials authored by the user.
+     *
+     * @return HasMany<PetMemorial, $this>
+     */
+    public function petMemorials(): HasMany
+    {
+        return $this->hasMany(PetMemorial::class);
+    }
+
+    /**
+     * The blog posts authored by the user.
+     *
+     * @return HasMany<BlogPost, $this>
+     */
+    public function blogPosts(): HasMany
+    {
+        return $this->hasMany(BlogPost::class);
+    }
+
+    /**
+     * The shop products created by the user.
+     *
+     * @return HasMany<Product, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
+     * The comments written by the user.
+     *
+     * @return HasMany<Comment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * The likes given by the user.
+     *
+     * @return HasMany<Like, $this>
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(Like::class);
     }
 }
