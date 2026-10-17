@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\PostStatus;
+use App\Observers\BlogPostObserver;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Database\Factories\BlogPostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -49,6 +51,7 @@ use Illuminate\Support\Facades\Storage;
     'views_count',
 ])]
 #[RouteKey('slug')]
+#[ObservedBy([BlogPostObserver::class])]
 class BlogPost extends Model
 {
     /** @use HasFactory<BlogPostFactory> */

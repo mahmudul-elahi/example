@@ -7,9 +7,11 @@ namespace App\Models;
 use App\Enums\PetType;
 use App\Enums\PostStatus;
 use App\Enums\VisibilityStatus;
+use App\Observers\PetMemorialObserver;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Database\Factories\PetMemorialFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -52,6 +54,7 @@ use Illuminate\Support\Facades\Storage;
     'views_count',
 ])]
 #[RouteKey('slug')]
+#[ObservedBy([PetMemorialObserver::class])]
 class PetMemorial extends Model
 {
     /** @use HasFactory<PetMemorialFactory> */

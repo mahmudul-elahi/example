@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ProductStatus;
+use App\Observers\ProductObserver;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -49,6 +51,7 @@ use Illuminate\Support\Facades\Storage;
     'cover_image',
 ])]
 #[RouteKey('slug')]
+#[ObservedBy([ProductObserver::class])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
