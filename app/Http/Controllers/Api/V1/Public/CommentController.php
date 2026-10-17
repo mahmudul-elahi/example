@@ -12,6 +12,7 @@ use App\Services\CommentServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Spatie\ResponseCache\Attributes\Cache;
 
 #[Group('Memorials', weight: 10)]
 class CommentController extends Controller
@@ -22,6 +23,7 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
+    #[Cache(lifetime: 600)]
     public function index(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
     {
         $comments = $this->comments->paginate($memorial, $request->perPage());

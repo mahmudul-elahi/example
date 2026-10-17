@@ -13,6 +13,7 @@ use App\Services\ProductServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Spatie\ResponseCache\Attributes\Cache;
 
 #[Group('Shop', weight: 30)]
 class ProductController extends Controller
@@ -23,6 +24,7 @@ class ProductController extends Controller
         protected ProductServiceInterface $products,
     ) {}
 
+    #[Cache(lifetime: 600)]
     public function index(IndexProductRequest $request): JsonResponse
     {
         $products = $this->products->paginate($request->perPage(), $request->search(), true);
@@ -30,6 +32,7 @@ class ProductController extends Controller
         return $this->paginated($products, ProductResource::collection($products->items()));
     }
 
+    #[Cache(lifetime: 600)]
     public function show(ShowProductRequest $request, Product $product): JsonResponse
     {
         return $this->success(new ProductResource($this->products->find($product->id)));

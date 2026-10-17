@@ -13,6 +13,8 @@ use App\Services\PetMemorialServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Spatie\ResponseCache\Attributes\Cache;
+use Spatie\ResponseCache\Attributes\NoCache;
 
 #[Group('Memorials', weight: 10)]
 class PetMemorialController extends Controller
@@ -23,6 +25,7 @@ class PetMemorialController extends Controller
         protected PetMemorialServiceInterface $memorials,
     ) {}
 
+    #[Cache(lifetime: 600)]
     public function index(IndexPetMemorialRequest $request): JsonResponse
     {
         $memorials = $this->memorials->paginate($request->perPage(), $request->search(), true);
@@ -30,6 +33,7 @@ class PetMemorialController extends Controller
         return $this->paginated($memorials, PetMemorialResource::collection($memorials->items()));
     }
 
+    #[NoCache]
     public function show(ShowPetMemorialRequest $request, PetMemorial $memorial): JsonResponse
     {
         $this->memorials->recordView($memorial);

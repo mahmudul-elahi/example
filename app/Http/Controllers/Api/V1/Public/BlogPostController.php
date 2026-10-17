@@ -13,6 +13,8 @@ use App\Services\BlogPostServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Spatie\ResponseCache\Attributes\Cache;
+use Spatie\ResponseCache\Attributes\NoCache;
 
 #[Group('Blog', weight: 20)]
 class BlogPostController extends Controller
@@ -23,6 +25,7 @@ class BlogPostController extends Controller
         protected BlogPostServiceInterface $posts,
     ) {}
 
+    #[Cache(lifetime: 600)]
     public function index(IndexBlogPostRequest $request): JsonResponse
     {
         $posts = $this->posts->paginate($request->perPage(), $request->search(), true);
@@ -30,6 +33,7 @@ class BlogPostController extends Controller
         return $this->paginated($posts, BlogPostResource::collection($posts->items()));
     }
 
+    #[NoCache]
     public function show(ShowBlogPostRequest $request, BlogPost $blogPost): JsonResponse
     {
         $this->posts->recordView($blogPost);
