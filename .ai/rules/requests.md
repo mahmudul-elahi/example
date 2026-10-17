@@ -6,7 +6,7 @@ paths:
 # Requests
 
 ## Validate with Form Requests
-All request validation lives in app/Http/Requests, suffixed Request. Type-hint the Form Request in the controller method. Never call `$request->validate()` or use the Validator facade inline — the Form Request is the single source of truth for rules.
+All request validation lives in app/Http/Requests, suffixed Request. Type-hint the Form Request in the controller method. Never call `$request->validate()` or use the Validator facade inline — the Form Request is the single source of truth for rules. Place each Form Request in the subfolder matching its controller's audience (`Api\V1\Public`, `Api\V1\User`, `Api\V1\Auth`, `Api\V1\Admin`) — see `.ai/rules/http.md`.
 
 ## Example
 

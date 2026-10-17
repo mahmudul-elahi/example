@@ -5,16 +5,16 @@ paths:
 
 # Controllers
 
-## Group a feature's controllers
-Put a feature's controllers in a subfolder matching its route file (routes/v1/{feature}.php), e.g. App\Http\Controllers\Api\V1\Auth for the auth feature. When a feature spans several controllers, annotate each with the same Scramble `#[Group('...')]` attribute so all of its endpoints share one tag in the API docs.
+## Group controllers by audience
+Put each controller in the subfolder matching the route file that registers it: `Api\V1\Auth`, `Api\V1\Public`, `Api\V1\User`, `Api\V1\Admin` (see `.ai/rules/http.md`). Guest-readable actions (no auth) live in `Public`; actions behind `auth:sanctum` live in `User`. Split a class that would serve both audiences into a `Public` and a `User` controller, and register each method in the matching route file. When several controllers feed the same Scramble tag, annotate each with the same `#[Group('...')]` attribute so all of its endpoints share one tag in the API docs.
 
 ```php
-namespace App\Http\Controllers\Api\V1\Auth;
+namespace App\Http\Controllers\Api\V1\Public;
 
 use Dedoc\Scramble\Attributes\Group;
 
-#[Group('Auth', weight: 1)]
-class AuthController extends Controller
+#[Group('Memorials', weight: 10)]
+class PetMemorialController extends Controller
 ```
 
 ## Return responses via the ApiResponse trait
@@ -92,4 +92,4 @@ Controller: validate (Form Request) -> call service -> wrap in Resource -> respo
 | Resource | shaping output | queries, business logic |
 
 ## Order API doc tags with #[Group] weight
-Scramble orders document tags by ascending `#[Group('Name', weight: N)]` weight (default is `PHP_INT_MAX`, so weightless groups sort last). Allocate weight bands per feature so future groups slot in without renumbering: Auth `1`, User `2–100`, Admin `100–200`. Current values: `Auth` 1, `Admin - User` 100, `Admin - Dashboard` 110. Controllers sharing one tag must all use the same weight — the first non-null weight Scramble encounters for a tag wins.
+Scramble orders document tags by ascending `#[Group('Name', weight: N)]` weight (default is `PHP_INT_MAX`, so weightless groups sort last). Allocate weight bands per feature so future groups slot in without renumbering: Auth `1`, User `2–100`, Admin `100–200`. Current values: `Auth` 1; `Memorials` 10, `Blog` 20, `Shop` 30; `Admin - User` 100, `Admin - Dashboard` 110, `Admin - Blog` 120, `Admin - Blog Category` 130, `Admin - Shop` 140. Controllers sharing one tag must all use the same weight — the first non-null weight Scramble encounters for a tag wins.
