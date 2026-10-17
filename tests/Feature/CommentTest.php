@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Enums\Roles;
+use App\Models\Comment;
+use App\Models\PetMemorial;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+describe('index', function (): void {
+    it('lists top-level comments with their replies to a guest', function (): void {
+        $memorial = PetMemorial::factory()->create();
+        $comment = Comment::factory()->forCommentable($memorial)->create();
+        Comment::factory()->forCommentable($memorial)->replyTo($comment)->create();
+
+        $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.id', $comment->id)
+            ->assertJsonPath('data.items.0.replies_count', 1)
+            ->assertJsonCount(1, 'data.items.0.replies')
+            ->assertJsonStructure([
+                'data' => [
+                    'items' => [
+                        '*' => [
+                            'id',
+                            'body',
+                            'parent_id',
+                            'author' => ['id', 'name'],
+                            'replies' => [
+                                '*' => ['id', 'body', 'parent_id'],
+                            ],
+                            'created_at',
+                        ],
+                    ],
+                    'meta' => ['current_page', 'per_page', 'total', 'last_page'],
+                ],
+            ]);
+    });
+
+    it('forbids a guest from listing comments of a private memorial', function (): void {
+        $memorial = PetMemorial::factory()->private()->create();
+
+        $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+            ->assertForbidden();
+    });
+
+    it('lets the owner list comments of their own private memorial', function (): void {
+        $owner = User::factory()->withRole(Roles::User)->create();
+        $memorial = PetMemorial::factory()->private()->forUser($owner)->create();
+        Comment::factory()->forCommentable($memorial)->create();
+
+        $this->actingAs($owner, 'sanctum')
+            ->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    });
+});
+
+describe('store', function (): void {
+    it('returns 401 when no token is provided', function (): void {
+        $memorial = PetMemorial::factory()->create();
+
+        $this->postJson("/api/v1/memorials/{$memorial->slug}/comments", ['body' => 'So sorry.'])
+            ->assertUnauthorized();
+    });
+
+    it('creates a comment and returns it with the author', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $memorial = PetMemorial::factory()->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/memorials/{$memorial->slug}/comments", ['body' => 'What a lovely tribute.'])
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.body', 'What a lovely tribute.')
+            ->assertJsonPath('data.parent_id', null)
+            ->assertJsonPath('data.author.id', $author->id);
+
+        $this->assertDatabaseHas('comments', [
+            'body' => 'What a lovely tribute.',
+            'user_id' => $author->id,
+            'commentable_type' => PetMemorial::class,
+            'commentable_id' => $memorial->id,
+        ]);
+    });
+
+    it('creates a reply to an existing comment', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $memorial = PetMemorial::factory()->create();
+        $parent = Comment::factory()->forCommentable($memorial)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/memorials/{$memorial->slug}/comments", [
+                'body' => 'Thinking of you.',
+                'parent_id' => $parent->id,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.parent_id', $parent->id);
+    });
+
+    it('returns 422 when the parent comment belongs to another memorial', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $memorial = PetMemorial::factory()->create();
+        $other = PetMemorial::factory()->create();
+        $parent = Comment::factory()->forCommentable($other)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/memorials/{$memorial->slug}/comments", [
+                'body' => 'Wrong thread.',
+                'parent_id' => $parent->id,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('parent_id');
+    });
+
+    it('returns 422 when the body is missing', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $memorial = PetMemorial::factory()->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/memorials/{$memorial->slug}/comments", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('body');
+    });
+});
+
+describe('destroy', function (): void {
+    it('lets the author delete their own comment', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->deleteJson("/api/v1/comments/{$comment->id}")
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
+    });
+
+    it('forbids a non-author from deleting a comment', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $other = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($other, 'sanctum')
+            ->deleteJson("/api/v1/comments/{$comment->id}")
+            ->assertForbidden();
+
+        $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
+    });
+
+    it('lets an admin delete any comment', function (): void {
+        $admin = User::factory()->withRole(Roles::Admin)->create();
+        $comment = Comment::factory()->create();
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/v1/comments/{$comment->id}")
+            ->assertOk();
+
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
+    });
+});
