@@ -15,7 +15,8 @@
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
-        "spatie/laravel-permission": "^8.0"
+        "spatie/laravel-permission": "^8.0",
+        "spatie/laravel-responsecache": "^8.4"
     },
     "require-dev": {
         "driftingly/rector-laravel": "^2.6",
