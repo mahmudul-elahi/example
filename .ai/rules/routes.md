@@ -6,7 +6,7 @@ paths:
 # Routes
 
 ## API-only application
-This project serves JSON APIs only. Register endpoints in the matching routes/v1/{feature}.php file (mounted from routes/api.php, wired up in bootstrap/app.php) — never add Blade views, web routes, or `view()` responses. Every endpoint returns JSON.
+This project serves JSON APIs only. Register endpoints in the matching routes/v1/*.php file (mounted from routes/api.php, wired up in bootstrap/app.php) — never add Blade views, web routes, or `view()` responses. Every endpoint returns JSON.
 
 ## Example
 
@@ -34,20 +34,26 @@ return Application::configure(basePath: dirname(__DIR__))
     })->create();
 ```
 
-**routes/v1/posts.php** — every model gets an API resource route (loaded from routes/api.php):
+**routes/v1/public.php** — guest-readable resource and single-action routes (loaded from routes/api.php):
 
 ```php
-use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\Public\PostController;
 use Illuminate\Support\Facades\Route;
 
-Route::apiResource('posts', PostController::class);
+Route::apiResource('posts', PostController::class)->only(['index', 'show']);
 
 // Explicit single-action routes:
 Route::get('posts/{post}', [PostController::class, 'show']);
+```
 
-// Route groups (auth, middleware, prefix):
+**routes/v1/user.php** — wrap authenticated endpoints in the `auth:sanctum` group:
+
+```php
+use App\Http\Controllers\Api\V1\User\PostController;
+use Illuminate\Support\Facades\Route;
+
 Route::middleware('auth:sanctum')->group(function (): void {
-    Route::apiResource('posts', PostController::class);
+    Route::apiResource('posts', PostController::class)->except(['index', 'show']);
 });
 ```
 
@@ -65,7 +71,7 @@ Route::post('login', [AuthController::class, 'login'])->name('auth.login');
 ```
 
 ## Mount versioned API route groups
-Keep routes/api.php as the only route entrypoint: it mounts each version prefix and loads one file per feature from the matching routes/v1/ folder. Do not add unversioned API endpoints, and do not inline feature routes in routes/api.php.
+Keep routes/api.php as the only route entrypoint: it mounts each version prefix and loads the four v1 audience files. Do not add unversioned API endpoints, and do not inline endpoint routes in routes/api.php.
 
 `routes/api.php`
 
@@ -74,38 +80,41 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group([
     __DIR__.'/v1/auth.php',
+    __DIR__.'/v1/public.php',
+    __DIR__.'/v1/user.php',
 ]);
+
+Route::prefix('v1/admin')
+    ->middleware(['auth:sanctum', 'role:admin'])
+    ->group([
+        __DIR__.'/v1/admin.php',
+    ]);
 ```
 
-`routes/v1/auth.php`
+## File routes by audience, not by model
+The four v1 files mirror the controller subfolders: `auth.php` (auth feature), `public.php` (no auth), `user.php` (`auth:sanctum`), and `admin.php` (admin-only). Spread one model's routes across the files by audience instead of creating one file per feature — a `memorials` resource keeps `index`/`show` in `public.php` and `store`/`update`/`destroy` in `user.php`.
+
+`routes/v1/public.php`
 
 ```php
-use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Public\PetMemorialController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('auth')->group(function (): void {
-    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
-});
+Route::apiResource('memorials', PetMemorialController::class)->only(['index', 'show']);
 ```
 
-Create a new routes/v1/{feature}.php file per feature and append it to the version's file list in routes/api.php. Group a feature's related routes (e.g. auth, password reset, email verification) inside that one file.
-
-## Versioned example
-
-`routes/v1/posts.php`
+`routes/v1/user.php`
 
 ```php
-use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\User\PetMemorialController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes
-Route::apiResource('posts', PostController::class)->only(['index', 'show']);
-
-// Authenticated routes
 Route::middleware('auth:sanctum')->group(function (): void {
-    Route::apiResource('posts', PostController::class)->except(['index', 'show']);
+    Route::apiResource('memorials', PetMemorialController::class)->except(['index', 'show']);
 });
 ```
+
+Add a new endpoint to the audience file that matches its middleware (`public.php`, `user.php`, `auth.php`, or `admin.php`); do not create a route file per model.
 
 ## Protect admin endpoints with the role middleware
 Admin-only endpoints combine Sanctum auth with the `role` middleware alias. Only `Roles` enum values are valid arguments (`admin` | `user`), and users hold a single role.
