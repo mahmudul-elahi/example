@@ -25,11 +25,66 @@ it('groups the authentication endpoints under a single Auth tag', function (): v
         ->and($response->json('paths./v1/auth/password/reset.post.tags'))->toBe(['Auth']);
 });
 
-it('orders the tags Auth, then Admin - User, then Admin - Dashboard', function (): void {
+it('orders the tags by their configured weight', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
     expect(array_column($response->json('tags'), 'name'))
-        ->toBe(['Auth', 'Admin - User', 'Admin - Dashboard']);
+        ->toBe([
+            'Auth',
+            'Memorials',
+            'Blog',
+            'Shop',
+            'Admin - User',
+            'Admin - Dashboard',
+            'Admin - Blog',
+            'Admin - Blog Category',
+            'Admin - Shop',
+        ]);
+});
+
+it('documents the memorial endpoints under the Memorials tag', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/memorials.get.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials.post.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}.get.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}.put.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}.delete.tags'))->toBe(['Memorials']);
+});
+
+it('documents the memorial comment and like endpoints', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/memorials/{memorial}/comments.get.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}/comments.post.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/comments/{comment}.delete.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}/like.post.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}/like.delete.tags'))->toBe(['Memorials']);
+});
+
+it('documents the public blog and shop endpoints', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/blog.get.tags'))->toBe(['Blog'])
+        ->and($response->json('paths./v1/blog/{blogPost}.get.tags'))->toBe(['Blog'])
+        ->and($response->json('paths./v1/shop.get.tags'))->toBe(['Shop'])
+        ->and($response->json('paths./v1/shop/{product}.get.tags'))->toBe(['Shop']);
+});
+
+it('documents the admin content management endpoints', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/admin/blog-posts.get.tags'))->toBe(['Admin - Blog'])
+        ->and($response->json('paths./v1/admin/blog-categories.get.tags'))->toBe(['Admin - Blog Category'])
+        ->and($response->json('paths./v1/admin/products.get.tags'))->toBe(['Admin - Shop']);
+});
+
+it('marks the public blog listing as not requiring a bearer token', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/blog.get.security'))->toBe([])
+        ->and($response->json('paths./v1/shop.get.security'))->toBe([])
+        ->and($response->json('paths./v1/memorials.get.security'))->toBe([]);
 });
 
 it('documents the admin dashboard endpoint under the Admin - Dashboard tag', function (): void {
