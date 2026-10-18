@@ -63,13 +63,7 @@ class PetMemorialService implements PetMemorialServiceInterface
 
     public function delete(PetMemorial $memorial): void
     {
-        $cover = $memorial->cover_image;
-
         $this->repository->delete($memorial);
-
-        if ($cover !== null) {
-            Storage::delete($cover);
-        }
     }
 
     public function recordView(PetMemorial $memorial): void

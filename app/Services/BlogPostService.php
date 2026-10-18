@@ -67,13 +67,7 @@ class BlogPostService implements BlogPostServiceInterface
 
     public function delete(BlogPost $post): void
     {
-        $cover = $post->cover_image;
-
         $this->repository->delete($post);
-
-        if ($cover !== null) {
-            Storage::delete($cover);
-        }
     }
 
     public function recordView(BlogPost $post): void

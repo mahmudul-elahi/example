@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Enums\ResponseCacheTag;
 use App\Models\BlogPost;
 use App\Traits\FlushesResponseCache;
+use Illuminate\Support\Facades\Storage;
 
 class BlogPostObserver
 {
@@ -37,10 +38,16 @@ class BlogPostObserver
     }
 
     /**
-     * Handle the BlogPost "force deleted" event.
+     * Handle the BlogPost "force deleted" event. The record is gone for good,
+     * so its cover image goes with it. Soft deletes keep the file so a restore
+     * cannot end up with a broken image URL.
      */
     public function forceDeleted(BlogPost $blogPost): void
     {
+        if ($blogPost->cover_image !== null) {
+            Storage::delete($blogPost->cover_image);
+        }
+
         $this->invalidate();
     }
 

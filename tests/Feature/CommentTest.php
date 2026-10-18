@@ -120,6 +120,23 @@ describe('store', function (): void {
             ->assertJsonValidationErrors('parent_id');
     });
 
+    it('returns 422 when the parent comment is itself a reply', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $memorial = PetMemorial::factory()->create();
+        $parent = Comment::factory()->forCommentable($memorial)->create();
+        $reply = Comment::factory()->forCommentable($memorial)->replyTo($parent)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/memorials/{$memorial->slug}/comments", [
+                'body' => 'Nested one level too deep.',
+                'parent_id' => $reply->id,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('parent_id');
+
+        expect($memorial->comments()->count())->toBe(2);
+    });
+
     it('returns 422 when the body is missing', function (): void {
         $author = User::factory()->withRole(Roles::User)->create();
         $memorial = PetMemorial::factory()->create();
@@ -248,6 +265,17 @@ describe('blog posts', function (): void {
 
         $this->actingAs($user, 'sanctum')
             ->postJson("/api/v1/blog/{$post->slug}/comments", ['body' => 'Not published yet.'])
+            ->assertForbidden();
+
+        expect($post->comments()->count())->toBe(0);
+    });
+
+    it('forbids a user from commenting on a post scheduled for the future', function (): void {
+        $user = User::factory()->withRole(Roles::User)->create();
+        $post = BlogPost::factory()->create(['published_at' => now()->addDay()]);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/blog/{$post->slug}/comments", ['body' => 'Not released yet.'])
             ->assertForbidden();
 
         expect($post->comments()->count())->toBe(0);

@@ -7,6 +7,7 @@ use App\Enums\Roles;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -166,4 +167,22 @@ it('lets an admin delete a product', function (): void {
         ->assertJsonPath('message', 'Product deleted successfully');
 
     $this->assertSoftDeleted('products', ['id' => $product->id]);
+});
+
+it('keeps a product cover image on soft delete and removes it on force delete', function (): void {
+    Storage::fake();
+
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $product = Product::factory()->create(['cover_image' => 'covers/frame.jpg']);
+    Storage::put('covers/frame.jpg', 'image');
+
+    $this->actingAs($admin, 'sanctum')
+        ->deleteJson("/api/v1/admin/products/{$product->slug}")
+        ->assertOk();
+
+    Storage::assertExists('covers/frame.jpg');
+
+    $product->forceDelete();
+
+    Storage::assertMissing('covers/frame.jpg');
 });

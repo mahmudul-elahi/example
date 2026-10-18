@@ -19,7 +19,8 @@ class BlogPostPolicy
     }
 
     /**
-     * A post is visible when published, or to its author and admins.
+     * A post is visible once it is live (published and due), or to its author
+     * and admins. Mirrors the `published` query scope.
      */
     public function view(?User $user, BlogPost $post): bool
     {
@@ -27,7 +28,8 @@ class BlogPostPolicy
             return true;
         }
 
-        return $post->status === PostStatus::Published;
+        return $post->status === PostStatus::Published
+            && ($post->published_at === null || ! $post->published_at->isFuture());
     }
 
     /**

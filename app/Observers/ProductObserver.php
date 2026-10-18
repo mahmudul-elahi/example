@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Enums\ResponseCacheTag;
 use App\Models\Product;
 use App\Traits\FlushesResponseCache;
+use Illuminate\Support\Facades\Storage;
 
 class ProductObserver
 {
@@ -37,10 +38,16 @@ class ProductObserver
     }
 
     /**
-     * Handle the Product "force deleted" event.
+     * Handle the Product "force deleted" event. The record is gone for good,
+     * so its cover image goes with it. Soft deletes keep the file so a restore
+     * cannot end up with a broken image URL.
      */
     public function forceDeleted(Product $product): void
     {
+        if ($product->cover_image !== null) {
+            Storage::delete($product->cover_image);
+        }
+
         $this->invalidate();
     }
 

@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Enums\ResponseCacheTag;
 use App\Models\PetMemorial;
 use App\Traits\FlushesResponseCache;
+use Illuminate\Support\Facades\Storage;
 
 class PetMemorialObserver
 {
@@ -37,10 +38,16 @@ class PetMemorialObserver
     }
 
     /**
-     * Handle the PetMemorial "force deleted" event.
+     * Handle the PetMemorial "force deleted" event. The record is gone for
+     * good, so its cover image goes with it. Soft deletes keep the file so a
+     * restore cannot end up with a broken image URL.
      */
     public function forceDeleted(PetMemorial $memorial): void
     {
+        if ($memorial->cover_image !== null) {
+            Storage::delete($memorial->cover_image);
+        }
+
         $this->invalidate();
     }
 

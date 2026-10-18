@@ -67,5 +67,11 @@ class CommentService implements CommentServiceInterface
                 'parent_id' => 'The parent comment does not belong to this thread.',
             ]);
         }
+
+        if ($parent->parent_id !== null) {
+            throw ValidationException::withMessages([
+                'parent_id' => 'You can only reply to a top-level comment.',
+            ]);
+        }
     }
 }

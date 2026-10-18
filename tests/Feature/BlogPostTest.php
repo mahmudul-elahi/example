@@ -8,6 +8,7 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -45,6 +46,19 @@ it('forbids a guest from viewing a draft post', function (): void {
 
     $this->getJson("/api/v1/blog/{$post->slug}")
         ->assertForbidden();
+});
+
+it('forbids a guest from viewing a post scheduled for the future', function (): void {
+    $post = BlogPost::factory()->create(['published_at' => now()->addDay()]);
+
+    $this->getJson("/api/v1/blog/{$post->slug}")
+        ->assertForbidden();
+
+    $this->travel(2)->days();
+
+    $this->getJson("/api/v1/blog/{$post->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.id', $post->id);
 });
 
 it('forbids non-admin users from managing blog posts', function (): void {
@@ -141,4 +155,22 @@ it('lets an admin delete a post', function (): void {
         ->assertJsonPath('message', 'Blog post deleted successfully');
 
     $this->assertSoftDeleted('blog_posts', ['id' => $post->id]);
+});
+
+it('keeps a post cover image on soft delete and removes it on force delete', function (): void {
+    Storage::fake();
+
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $post = BlogPost::factory()->create(['cover_image' => 'covers/welcome.jpg']);
+    Storage::put('covers/welcome.jpg', 'image');
+
+    $this->actingAs($admin, 'sanctum')
+        ->deleteJson("/api/v1/admin/blog-posts/{$post->slug}")
+        ->assertOk();
+
+    Storage::assertExists('covers/welcome.jpg');
+
+    $post->forceDelete();
+
+    Storage::assertMissing('covers/welcome.jpg');
 });

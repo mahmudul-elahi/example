@@ -183,6 +183,24 @@ it('lets the owner delete their memorial', function (): void {
     $this->assertSoftDeleted('pet_memorials', ['id' => $memorial->id]);
 });
 
+it('keeps a memorial cover image on soft delete and removes it on force delete', function (): void {
+    Storage::fake();
+
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $memorial = PetMemorial::factory()->forUser($owner)->create(['cover_image' => 'covers/bella.jpg']);
+    Storage::put('covers/bella.jpg', 'image');
+
+    $this->actingAs($owner, 'sanctum')
+        ->deleteJson("/api/v1/memorials/{$memorial->slug}")
+        ->assertOk();
+
+    Storage::assertExists('covers/bella.jpg');
+
+    $memorial->forceDelete();
+
+    Storage::assertMissing('covers/bella.jpg');
+});
+
 it('forbids another user from deleting a memorial', function (): void {
     $owner = User::factory()->withRole(Roles::User)->create();
     $other = User::factory()->withRole(Roles::User)->create();

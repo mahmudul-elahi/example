@@ -66,13 +66,7 @@ class ProductService implements ProductServiceInterface
 
     public function delete(Product $product): void
     {
-        $cover = $product->cover_image;
-
         $this->repository->delete($product);
-
-        if ($cover !== null) {
-            Storage::delete($cover);
-        }
     }
 
     /**
