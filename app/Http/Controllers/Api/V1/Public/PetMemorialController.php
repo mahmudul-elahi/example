@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Spatie\ResponseCache\Attributes\Cache;
 use Spatie\ResponseCache\Attributes\NoCache;
 
-#[Group('Memorials', weight: 10)]
+#[Group('Public - Memorials', weight: 10)]
 class PetMemorialController extends Controller
 {
     use ApiResponse;

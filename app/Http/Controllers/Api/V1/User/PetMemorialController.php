@@ -17,7 +17,7 @@ use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
-#[Group('Memorials', weight: 10)]
+#[Group('User - Memorials', weight: 40)]
 class PetMemorialController extends Controller
 {
     use ApiResponse;

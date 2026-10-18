@@ -31,9 +31,14 @@ it('orders the tags by their configured weight', function (): void {
     expect(array_column($response->json('tags'), 'name'))
         ->toBe([
             'Auth',
-            'Memorials',
-            'Blog',
-            'Shop',
+            'Public - Memorials',
+            'Public - Blog',
+            'Public - Shop',
+            'User - Memorials',
+            'User - Blog',
+            'User - Shop',
+            'User - Comments',
+            'User - Likes',
             'Admin - User',
             'Admin - Dashboard',
             'Admin - Blog',
@@ -42,32 +47,32 @@ it('orders the tags by their configured weight', function (): void {
         ]);
 });
 
-it('documents the memorial endpoints under the Memorials tag', function (): void {
+it('documents the memorial endpoints under the Memorials tags', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/memorials.get.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/memorials.post.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/memorials/{memorial}.get.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/memorials/{memorial}.put.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/memorials/{memorial}.delete.tags'))->toBe(['Memorials']);
+    expect($response->json('paths./v1/memorials.get.tags'))->toBe(['Public - Memorials'])
+        ->and($response->json('paths./v1/memorials.post.tags'))->toBe(['User - Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}.get.tags'))->toBe(['Public - Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}.put.tags'))->toBe(['User - Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}.delete.tags'))->toBe(['User - Memorials']);
 });
 
 it('documents the memorial comment and like endpoints', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/memorials/{memorial}/comments.get.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/memorials/{memorial}/comments.post.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/memorials/{memorial}/like.post.tags'))->toBe(['Memorials']);
+    expect($response->json('paths./v1/memorials/{memorial}/comments.get.tags'))->toBe(['Public - Memorials'])
+        ->and($response->json('paths./v1/memorials/{memorial}/comments.post.tags'))->toBe(['User - Memorials'])
+        ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['User - Comments'])
+        ->and($response->json('paths./v1/memorials/{memorial}/like.post.tags'))->toBe(['User - Memorials']);
 });
 
 it('documents the public blog and shop endpoints', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/blog.get.tags'))->toBe(['Blog'])
-        ->and($response->json('paths./v1/blog/{blogPost}.get.tags'))->toBe(['Blog'])
-        ->and($response->json('paths./v1/shop.get.tags'))->toBe(['Shop'])
-        ->and($response->json('paths./v1/shop/{product}.get.tags'))->toBe(['Shop']);
+    expect($response->json('paths./v1/blog.get.tags'))->toBe(['Public - Blog'])
+        ->and($response->json('paths./v1/blog/{blogPost}.get.tags'))->toBe(['Public - Blog'])
+        ->and($response->json('paths./v1/shop.get.tags'))->toBe(['Public - Shop'])
+        ->and($response->json('paths./v1/shop/{product}.get.tags'))->toBe(['Public - Shop']);
 });
 
 it('documents the admin content management endpoints', function (): void {
@@ -81,13 +86,13 @@ it('documents the admin content management endpoints', function (): void {
 it('documents the blog and shop comment and like endpoints', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/blog/{blogPost}/comments.get.tags'))->toBe(['Blog'])
-        ->and($response->json('paths./v1/blog/{blogPost}/comments.post.tags'))->toBe(['Blog'])
-        ->and($response->json('paths./v1/blog/{blogPost}/like.post.tags'))->toBe(['Blog'])
-        ->and($response->json('paths./v1/shop/{product}/comments.get.tags'))->toBe(['Shop'])
-        ->and($response->json('paths./v1/shop/{product}/comments.post.tags'))->toBe(['Shop'])
-        ->and($response->json('paths./v1/shop/{product}/like.post.tags'))->toBe(['Shop'])
-        ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['Memorials']);
+    expect($response->json('paths./v1/blog/{blogPost}/comments.get.tags'))->toBe(['Public - Blog'])
+        ->and($response->json('paths./v1/blog/{blogPost}/comments.post.tags'))->toBe(['User - Blog'])
+        ->and($response->json('paths./v1/blog/{blogPost}/like.post.tags'))->toBe(['User - Blog'])
+        ->and($response->json('paths./v1/shop/{product}/comments.get.tags'))->toBe(['Public - Shop'])
+        ->and($response->json('paths./v1/shop/{product}/comments.post.tags'))->toBe(['User - Shop'])
+        ->and($response->json('paths./v1/shop/{product}/like.post.tags'))->toBe(['User - Shop'])
+        ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['User - Comments']);
 });
 
 it('documents one comment delete endpoint for every content type', function (): void {
@@ -105,7 +110,7 @@ it('documents one comment delete endpoint for every content type', function (): 
 it('documents one unlike endpoint for every likeable type', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/likes/{type}/{id}.delete.tags'))->toBe(['Memorials'])
+    expect($response->json('paths./v1/likes/{type}/{id}.delete.tags'))->toBe(['User - Likes'])
         ->and($response->json('paths./v1/likes/{type}/{id}.delete.parameters.0.name'))->toBe('type')
         ->and($response->json('paths./v1/likes/{type}/{id}.delete.parameters.1.schema.type'))->toBe('integer')
         // Unlike is not resource-scoped any more, so the three old routes stay gone.

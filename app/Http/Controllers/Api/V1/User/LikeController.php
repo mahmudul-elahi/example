@@ -31,7 +31,7 @@ class LikeController extends Controller
         protected LikeServiceInterface $likes,
     ) {}
 
-    #[Group('Memorials', weight: 10)]
+    #[Group('User - Memorials', weight: 40)]
     public function storeMemorial(LikeRequest $request, PetMemorial $memorial, #[CurrentUser] User $user): JsonResponse
     {
         return $this->success(
@@ -40,7 +40,7 @@ class LikeController extends Controller
         );
     }
 
-    #[Group('Blog', weight: 20)]
+    #[Group('User - Blog', weight: 50)]
     public function storeBlogPost(LikeRequest $request, BlogPost $blogPost, #[CurrentUser] User $user): JsonResponse
     {
         return $this->success(
@@ -49,7 +49,7 @@ class LikeController extends Controller
         );
     }
 
-    #[Group('Shop', weight: 30)]
+    #[Group('User - Shop', weight: 60)]
     public function storeProduct(LikeRequest $request, Product $product, #[CurrentUser] User $user): JsonResponse
     {
         return $this->success(
@@ -58,7 +58,7 @@ class LikeController extends Controller
         );
     }
 
-    #[Group('Memorials', weight: 10)]
+    #[Group('User - Likes', weight: 80)]
     #[Parameter('path', 'type', description: 'The content type: memorials, blog-posts or products.')]
     #[Parameter('path', 'id', type: 'integer')]
     public function destroy(DeleteLikeRequest $request, #[CurrentUser] User $user): JsonResponse

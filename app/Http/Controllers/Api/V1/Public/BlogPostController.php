@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Spatie\ResponseCache\Attributes\Cache;
 use Spatie\ResponseCache\Attributes\NoCache;
 
-#[Group('Blog', weight: 20)]
+#[Group('Public - Blog', weight: 20)]
 class BlogPostController extends Controller
 {
     use ApiResponse;

@@ -31,7 +31,7 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
-    #[Group('Memorials', weight: 10)]
+    #[Group('User - Memorials', weight: 40)]
     public function storeMemorial(StoreCommentRequest $request, PetMemorial $memorial, #[CurrentUser] User $user): JsonResponse
     {
         $comment = $this->comments->create($user, $memorial, $request->validated());
@@ -39,7 +39,7 @@ class CommentController extends Controller
         return $this->created(new CommentResource($this->comments->find($comment->id)));
     }
 
-    #[Group('Blog', weight: 20)]
+    #[Group('User - Blog', weight: 50)]
     public function storeBlogPost(StoreCommentRequest $request, BlogPost $blogPost, #[CurrentUser] User $user): JsonResponse
     {
         $comment = $this->comments->create($user, $blogPost, $request->validated());
@@ -47,7 +47,7 @@ class CommentController extends Controller
         return $this->created(new CommentResource($this->comments->find($comment->id)));
     }
 
-    #[Group('Shop', weight: 30)]
+    #[Group('User - Shop', weight: 60)]
     public function storeProduct(StoreCommentRequest $request, Product $product, #[CurrentUser] User $user): JsonResponse
     {
         $comment = $this->comments->create($user, $product, $request->validated());
@@ -55,7 +55,7 @@ class CommentController extends Controller
         return $this->created(new CommentResource($this->comments->find($comment->id)));
     }
 
-    #[Group('Memorials', weight: 10)]
+    #[Group('User - Comments', weight: 70)]
     #[Parameter('path', 'type', description: 'The content type: memorials, blog-posts or products.')]
     #[Parameter('path', 'comment', description: 'The comment ID', type: 'integer')]
     public function destroy(DeleteCommentRequest $request): JsonResponse

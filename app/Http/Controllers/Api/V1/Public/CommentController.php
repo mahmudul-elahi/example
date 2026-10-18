@@ -29,7 +29,7 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
-    #[Group('Memorials', weight: 10)]
+    #[Group('Public - Memorials', weight: 10)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function indexMemorial(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
     {
@@ -38,7 +38,7 @@ class CommentController extends Controller
         return $this->paginated($comments, CommentResource::collection($comments->items()));
     }
 
-    #[Group('Blog', weight: 20)]
+    #[Group('Public - Blog', weight: 20)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function indexBlogPost(IndexCommentRequest $request, BlogPost $blogPost): JsonResponse
     {
@@ -47,7 +47,7 @@ class CommentController extends Controller
         return $this->paginated($comments, CommentResource::collection($comments->items()));
     }
 
-    #[Group('Shop', weight: 30)]
+    #[Group('Public - Shop', weight: 30)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function indexProduct(IndexCommentRequest $request, Product $product): JsonResponse
     {

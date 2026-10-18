@@ -16,7 +16,7 @@ use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Spatie\ResponseCache\Attributes\Cache;
 
-#[Group('Shop', weight: 30)]
+#[Group('Public - Shop', weight: 30)]
 class ProductController extends Controller
 {
     use ApiResponse;

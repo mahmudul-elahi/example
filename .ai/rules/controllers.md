@@ -6,14 +6,14 @@ paths:
 # Controllers
 
 ## Group controllers by audience
-Put each controller in the subfolder matching the route file that registers it: `Api\V1\Auth`, `Api\V1\Public`, `Api\V1\User`, `Api\V1\Admin` (see `.ai/rules/http.md`). Guest-readable actions (no auth) live in `Public`; actions behind `auth:sanctum` live in `User`. Split a class that would serve both audiences into a `Public` and a `User` controller, and register each method in the matching route file. When several controllers feed the same Scramble tag, annotate each with the same `#[Group('...')]` attribute so all of its endpoints share one tag in the API docs.
+Put each controller in the subfolder matching the route file that registers it: `Api\V1\Auth`, `Api\V1\Public`, `Api\V1\User`, `Api\V1\Admin` (see `.ai/rules/http.md`). Guest-readable actions (no auth) live in `Public`; actions behind `auth:sanctum` live in `User`. Split a class that would serve both audiences into a `Public` and a `User` controller, and register each method in the matching route file. Controllers keep their audience in the Scramble tag: name it `<Audience> - <Feature>` (`Public - Blog`, `User - Blog`) so the docs list the bands in audience order instead of mixing public and user endpoints under one feature tag.
 
 ```php
 namespace App\Http\Controllers\Api\V1\Public;
 
 use Dedoc\Scramble\Attributes\Group;
 
-#[Group('Memorials', weight: 10)]
+#[Group('Public - Memorials', weight: 10)]
 class PetMemorialController extends Controller
 ```
 
@@ -92,4 +92,4 @@ Controller: validate (Form Request) -> call service -> wrap in Resource -> respo
 | Resource | shaping output | queries, business logic |
 
 ## Order API doc tags with #[Group] weight
-Scramble orders document tags by ascending `#[Group('Name', weight: N)]` weight (default is `PHP_INT_MAX`, so weightless groups sort last). Allocate weight bands per feature so future groups slot in without renumbering: Auth `1`, User `2–100`, Admin `100–200`. Current values: `Auth` 1; `Memorials` 10, `Blog` 20, `Shop` 30; `Admin - User` 100, `Admin - Dashboard` 110, `Admin - Blog` 120, `Admin - Blog Category` 130, `Admin - Shop` 140. Controllers sharing one tag must all use the same weight — the first non-null weight Scramble encounters for a tag wins.
+Scramble orders document tags by ascending `#[Group('Name', weight: N)]` weight (default is `PHP_INT_MAX`, so weightless groups sort last). Name each tag `<Audience> - <Feature>` and give every audience one weight band so the docs always read Auth, then Public, then User, then Admin, and future groups slot in without renumbering: Auth `1`, Public `10–39`, User `40–99`, Admin `100–200`. Current values: `Auth` 1; `Public - Memorials` 10, `Public - Blog` 20, `Public - Shop` 30; `User - Memorials` 40, `User - Blog` 50, `User - Shop` 60, `User - Comments` 70, `User - Likes` 80; `Admin - User` 100, `Admin - Dashboard` 110, `Admin - Blog` 120, `Admin - Blog Category` 130, `Admin - Shop` 140. Cross-content endpoints (the delete-by-type routes) take the tag of the audience file that registers them plus the resource they address (`User - Comments`, `User - Likes`). Controllers sharing one tag must all use the same weight — the first non-null weight Scramble encounters for a tag wins.
