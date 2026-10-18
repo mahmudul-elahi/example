@@ -11,20 +11,37 @@ use Illuminate\Database\Seeder;
 class UserSeeder extends Seeder
 {
     /**
-     * Seed one admin and three regular users.
+     * The number of regular users seeded next to the admin account.
+     */
+    private const REGULAR_USER_COUNT = 10;
+
+    /**
+     * Seed one admin and ten verified regular users.
+     *
+     * Emails are deterministic — admin@example.com and user1..user10@example.com
+     * — so every seeded account is known and repeatable, and each one uses the
+     * password "password".
      */
     public function run(): void
     {
-        User::factory()
-            ->withRole(Roles::Admin)
-            ->create([
-                'name' => 'Admin User',
-                'email' => 'admin@example.com',
-            ]);
+        $this->seedAccount('admin@example.com', 'Admin User', Roles::Admin);
 
+        foreach (range(1, self::REGULAR_USER_COUNT) as $number) {
+            $this->seedAccount("user{$number}@example.com", "User {$number}", Roles::User);
+        }
+    }
+
+    /**
+     * Create a verified account with the shared password and its single role.
+     */
+    private function seedAccount(string $email, string $name, Roles $role): void
+    {
         User::factory()
-            ->withRole(Roles::User)
-            ->count(3)
-            ->create();
+            ->withRole($role)
+            ->create([
+                'name' => $name,
+                'email' => $email,
+                'password' => 'password',
+            ]);
     }
 }
