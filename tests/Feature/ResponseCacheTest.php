@@ -291,6 +291,48 @@ it('invalidates the memorials index cache when a memorial is liked and unliked',
         ->assertJsonPath('data.items.0.likes_count', 0);
 });
 
+it('invalidates the blog index cache when a post is liked and unliked', function (): void {
+    $post = BlogPost::factory()->create();
+
+    $this->getJson('/api/v1/blog')
+        ->assertOk()
+        ->assertJsonPath('data.items.0.likes_count', 0);
+
+    $like = Like::factory()->forLikeable($post)->create();
+
+    $this->getJson('/api/v1/blog')
+        ->assertOk()
+        ->assertJsonPath('data.items.0.likes_count', 1);
+
+    // Bulk deletes through the repository must also invalidate
+    resolve(LikeRepositoryInterface::class)->delete($like->user, $post);
+
+    $this->getJson('/api/v1/blog')
+        ->assertOk()
+        ->assertJsonPath('data.items.0.likes_count', 0);
+});
+
+it('invalidates the cached product when it is liked and unliked', function (): void {
+    $product = Product::factory()->create();
+
+    $this->getJson("/api/v1/shop/{$product->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.likes_count', 0);
+
+    $like = Like::factory()->forLikeable($product)->create();
+
+    $this->getJson("/api/v1/shop/{$product->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.likes_count', 1);
+
+    // Bulk deletes through the repository must also invalidate
+    resolve(LikeRepositoryInterface::class)->delete($like->user, $product);
+
+    $this->getJson("/api/v1/shop/{$product->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.likes_count', 0);
+});
+
 it('invalidates the blog index cache when a category is renamed', function (): void {
     $category = BlogCategory::factory()->create(['name' => 'Original Name']);
     BlogPost::factory()->forCategory($category)->create();
