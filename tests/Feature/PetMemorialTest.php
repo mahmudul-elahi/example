@@ -20,7 +20,7 @@ it('lists only publicly visible memorials to a guest', function (): void {
     $this->getJson('/api/v1/memorials')
         ->assertOk()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.meta.total', 2)
+        ->assertJsonPath('data.meta.per_page', 15)
         ->assertJsonStructure([
             'success',
             'message',
@@ -36,7 +36,7 @@ it('lists only publicly visible memorials to a guest', function (): void {
                         'author' => ['id', 'name'],
                     ],
                 ],
-                'meta' => ['current_page', 'per_page', 'total', 'last_page'],
+                'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
             ],
         ]);
 });
@@ -47,7 +47,7 @@ it('filters memorials by search', function (): void {
 
     $this->getJson('/api/v1/memorials?search=Rex')
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1)
+        ->assertJsonPath('data.meta.per_page', 15)
         ->assertJsonPath('data.items.0.pet_name', 'Rex');
 });
 

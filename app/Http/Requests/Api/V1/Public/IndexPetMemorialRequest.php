@@ -23,6 +23,7 @@ class IndexPetMemorialRequest extends FormRequest
         return [
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'search' => ['sometimes', 'string', 'max:255'],
+            'cursor' => ['sometimes', 'string'],
         ];
     }
 
@@ -34,5 +35,10 @@ class IndexPetMemorialRequest extends FormRequest
     public function search(): ?string
     {
         return $this->filled('search') ? (string) $this->input('search') : null;
+    }
+
+    public function cursor(): ?string
+    {
+        return $this->filled('cursor') ? (string) $this->input('cursor') : null;
     }
 }

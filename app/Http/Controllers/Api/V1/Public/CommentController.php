@@ -33,26 +33,26 @@ class CommentController extends Controller
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function indexMemorial(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
     {
-        $comments = $this->comments->paginate($memorial, $request->perPage());
+        $comments = $this->comments->cursorPaginate($memorial, $request->perPage(), $request->cursor());
 
-        return $this->paginated($comments, CommentResource::collection($comments->items()));
+        return $this->cursorPaginated($comments, CommentResource::collection($comments->items()));
     }
 
     #[Group('Public - Blog', weight: 20)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function indexBlogPost(IndexCommentRequest $request, BlogPost $blogPost): JsonResponse
     {
-        $comments = $this->comments->paginate($blogPost, $request->perPage());
+        $comments = $this->comments->cursorPaginate($blogPost, $request->perPage(), $request->cursor());
 
-        return $this->paginated($comments, CommentResource::collection($comments->items()));
+        return $this->cursorPaginated($comments, CommentResource::collection($comments->items()));
     }
 
     #[Group('Public - Shop', weight: 30)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function indexProduct(IndexCommentRequest $request, Product $product): JsonResponse
     {
-        $comments = $this->comments->paginate($product, $request->perPage());
+        $comments = $this->comments->cursorPaginate($product, $request->perPage(), $request->cursor());
 
-        return $this->paginated($comments, CommentResource::collection($comments->items()));
+        return $this->cursorPaginated($comments, CommentResource::collection($comments->items()));
     }
 }

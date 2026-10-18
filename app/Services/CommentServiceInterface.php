@@ -8,6 +8,7 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +20,11 @@ interface CommentServiceInterface
      * @return LengthAwarePaginator<int, Comment>
      */
     public function paginate(Model $commentable, int $perPage): LengthAwarePaginator;
+
+    /**
+     * @return CursorPaginator<int, Comment>
+     */
+    public function cursorPaginate(Model $commentable, int $perPage, ?string $cursor = null): CursorPaginator;
 
     public function find(int $id): Comment;
 

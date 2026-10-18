@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\PetMemorial;
 use App\Models\User;
 use App\Repositories\PetMemorialRepositoryInterface;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,14 @@ class PetMemorialService implements PetMemorialServiceInterface
     public function paginate(int $perPage, ?string $search, bool $publicOnly): LengthAwarePaginator
     {
         return $this->repository->paginate($perPage, $search, $publicOnly);
+    }
+
+    /**
+     * @return CursorPaginator<int, PetMemorial>
+     */
+    public function cursorPaginate(int $perPage, ?string $search, bool $publicOnly, ?string $cursor = null): CursorPaginator
+    {
+        return $this->repository->cursorPaginate($perPage, $search, $publicOnly, $cursor);
     }
 
     public function find(int $id): PetMemorial

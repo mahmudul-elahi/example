@@ -27,11 +27,17 @@ class IndexCommentRequest extends FormRequest
     {
         return [
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'cursor' => ['sometimes', 'string'],
         ];
     }
 
     public function perPage(): int
     {
         return (int) $this->input('per_page', 15);
+    }
+
+    public function cursor(): ?string
+    {
+        return $this->filled('cursor') ? (string) $this->input('cursor') : null;
     }
 }

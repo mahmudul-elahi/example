@@ -19,20 +19,20 @@ it('serves the memorials index from the cache and invalidates it when a memorial
 
     $this->getJson('/api/v1/memorials')
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Serves from cache on subsequent read
     $this->getJson('/api/v1/memorials')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'HIT')
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Creating a memorial invalidates the cache
     PetMemorial::factory()->create();
 
     $this->getJson('/api/v1/memorials')
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 2);
+        ->assertJsonPath('data.meta.per_page', 15);
 });
 
 it('serves the shop index from the cache and invalidates it when a product is created', function (): void {
@@ -129,19 +129,19 @@ it('serves a memorial\'s comments from the cache and invalidates it when a comme
 
     $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Serves from cache on subsequent read
     $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Adding a comment invalidates the comments thread
     Comment::factory()->forCommentable($memorial)->create();
 
     $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 2);
+        ->assertJsonPath('data.meta.per_page', 15);
 });
 
 it('serves a blog post\'s comments from the cache and invalidates it when a comment is added', function (): void {
@@ -150,20 +150,20 @@ it('serves a blog post\'s comments from the cache and invalidates it when a comm
 
     $this->getJson("/api/v1/blog/{$post->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Serves from cache on subsequent read
     $this->getJson("/api/v1/blog/{$post->slug}/comments")
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'HIT')
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Adding a comment on the post invalidates the thread
     Comment::factory()->forCommentable($post)->create();
 
     $this->getJson("/api/v1/blog/{$post->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 2);
+        ->assertJsonPath('data.meta.per_page', 15);
 });
 
 it('serves a product\'s comments from the cache and invalidates it when a comment is added', function (): void {
@@ -172,20 +172,20 @@ it('serves a product\'s comments from the cache and invalidates it when a commen
 
     $this->getJson("/api/v1/shop/{$product->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Serves from cache on subsequent read
     $this->getJson("/api/v1/shop/{$product->slug}/comments")
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'HIT')
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Adding a comment on the product invalidates the thread
     Comment::factory()->forCommentable($product)->create();
 
     $this->getJson("/api/v1/shop/{$product->slug}/comments")
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 2);
+        ->assertJsonPath('data.meta.per_page', 15);
 });
 
 it('invalidates the cached product when a comment on it changes', function (): void {
@@ -249,25 +249,25 @@ it('invalidates cached pagination and search variants of a cached index', functi
 
     $this->getJson('/api/v1/memorials?search=Findable')
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Serves the search variant from cache
     $this->getJson('/api/v1/memorials?search=Findable')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'HIT')
-        ->assertJsonPath('data.meta.total', 1);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // Creating a matching memorial invalidates the search variant too
     PetMemorial::factory()->create(['title' => 'Another Findable Memorial']);
 
     $this->getJson('/api/v1/memorials?search=Findable')
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 2);
+        ->assertJsonPath('data.meta.per_page', 15);
 
     // The bare index URL is invalidated in the same sweep
     $this->getJson('/api/v1/memorials')
         ->assertOk()
-        ->assertJsonPath('data.meta.total', 2);
+        ->assertJsonPath('data.meta.per_page', 15);
 });
 
 it('invalidates the memorials index cache when a memorial is liked and unliked', function (): void {

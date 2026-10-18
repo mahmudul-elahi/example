@@ -21,7 +21,7 @@ describe('index', function (): void {
         $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.meta.per_page', 15)
             ->assertJsonPath('data.items.0.id', $comment->id)
             ->assertJsonPath('data.items.0.replies_count', 1)
             ->assertJsonCount(1, 'data.items.0.replies')
@@ -39,7 +39,7 @@ describe('index', function (): void {
                             'created_at',
                         ],
                     ],
-                    'meta' => ['current_page', 'per_page', 'total', 'last_page'],
+                    'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
                 ],
             ]);
     });
@@ -59,7 +59,7 @@ describe('index', function (): void {
         $this->actingAs($owner, 'sanctum')
             ->getJson("/api/v1/memorials/{$memorial->slug}/comments")
             ->assertOk()
-            ->assertJsonPath('data.meta.total', 1);
+            ->assertJsonPath('data.meta.per_page', 15);
     });
 });
 
@@ -228,7 +228,7 @@ describe('blog posts', function (): void {
         $this->getJson("/api/v1/blog/{$post->slug}/comments")
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.meta.per_page', 15)
             ->assertJsonPath('data.items.0.id', $comment->id)
             ->assertJsonPath('data.items.0.replies_count', 1);
     });
@@ -290,7 +290,7 @@ describe('products', function (): void {
         $this->getJson("/api/v1/shop/{$product->slug}/comments")
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.meta.per_page', 15)
             ->assertJsonPath('data.items.0.id', $comment->id);
     });
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,6 +40,25 @@ trait ApiResponse
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
+            ],
+        ], $message, $code);
+    }
+
+    /**
+     * @param  CursorPaginator<int, mixed>  $paginator
+     */
+    protected function cursorPaginated(
+        CursorPaginator $paginator,
+        JsonResource $items,
+        string $message = 'Success',
+        int $code = Response::HTTP_OK
+    ): JsonResponse {
+        return $this->success([
+            'items' => $items,
+            'meta' => [
+                'per_page' => $paginator->perPage(),
+                'next_cursor' => $paginator->nextCursor()?->encode(),
+                'prev_cursor' => $paginator->previousCursor()?->encode(),
             ],
         ], $message, $code);
     }

@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Models\PetMemorial;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 #[Bind(PetMemorialRepository::class)]
@@ -17,6 +18,11 @@ interface PetMemorialRepositoryInterface
      * @return LengthAwarePaginator<int, PetMemorial>
      */
     public function paginate(int $perPage, ?string $search, bool $publicOnly): LengthAwarePaginator;
+
+    /**
+     * @return CursorPaginator<int, PetMemorial>
+     */
+    public function cursorPaginate(int $perPage, ?string $search, bool $publicOnly, ?string $cursor = null): CursorPaginator;
 
     public function find(int $id): PetMemorial;
 
