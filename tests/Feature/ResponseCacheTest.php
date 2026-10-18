@@ -226,7 +226,7 @@ it('invalidates the memorials index cache when a memorial is liked and unliked',
         ->assertJsonPath('data.items.0.likes_count', 1);
 
     // Bulk deletes through the repository must also invalidate
-    app(LikeRepositoryInterface::class)->delete($like->user, $memorial);
+    resolve(LikeRepositoryInterface::class)->delete($like->user, $memorial);
 
     $this->getJson('/api/v1/memorials')
         ->assertOk()
