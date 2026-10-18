@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\PetMemorialServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 #[Group('Memorials', weight: 10)]
@@ -25,11 +26,8 @@ class PetMemorialController extends Controller
         protected PetMemorialServiceInterface $memorials,
     ) {}
 
-    public function store(StorePetMemorialRequest $request): JsonResponse
+    public function store(StorePetMemorialRequest $request, #[CurrentUser] User $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-
         $memorial = $this->memorials->create($user, $request->validated());
 
         return $this->created(new PetMemorialResource($this->memorials->find($memorial->id)));

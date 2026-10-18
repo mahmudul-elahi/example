@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\ProductServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 #[Group('Admin - Shop', weight: 140)]
@@ -32,11 +33,8 @@ class ProductController extends Controller
         return $this->paginated($products, ProductResource::collection($products->items()));
     }
 
-    public function store(StoreProductRequest $request): JsonResponse
+    public function store(StoreProductRequest $request, #[CurrentUser] User $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-
         $product = $this->products->create($user, $request->validated());
 
         return $this->created(new ProductResource($this->products->find($product->id)));

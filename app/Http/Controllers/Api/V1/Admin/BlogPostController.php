@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\BlogPostServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 #[Group('Admin - Blog', weight: 120)]
@@ -32,11 +33,8 @@ class BlogPostController extends Controller
         return $this->paginated($posts, BlogPostResource::collection($posts->items()));
     }
 
-    public function store(StoreBlogPostRequest $request): JsonResponse
+    public function store(StoreBlogPostRequest $request, #[CurrentUser] User $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-
         $post = $this->posts->create($user, $request->validated());
 
         return $this->created(new BlogPostResource($this->posts->find($post->id)));

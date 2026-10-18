@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\LikeServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 #[Group('Memorials', weight: 10)]
@@ -22,22 +23,16 @@ class LikeController extends Controller
         protected LikeServiceInterface $likes,
     ) {}
 
-    public function store(LikeMemorialRequest $request, PetMemorial $memorial): JsonResponse
+    public function store(LikeMemorialRequest $request, PetMemorial $memorial, #[CurrentUser] User $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-
         return $this->success(
             ['likes_count' => $this->likes->like($user, $memorial)],
             'Memorial liked'
         );
     }
 
-    public function destroy(LikeMemorialRequest $request, PetMemorial $memorial): JsonResponse
+    public function destroy(LikeMemorialRequest $request, PetMemorial $memorial, #[CurrentUser] User $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-
         return $this->success(
             ['likes_count' => $this->likes->unlike($user, $memorial)],
             'Memorial unliked'

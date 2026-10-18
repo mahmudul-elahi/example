@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\CommentServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 #[Group('Memorials', weight: 10)]
@@ -25,11 +26,8 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
-    public function store(StoreCommentRequest $request, PetMemorial $memorial): JsonResponse
+    public function store(StoreCommentRequest $request, PetMemorial $memorial, #[CurrentUser] User $user): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-
         $comment = $this->comments->create($user, $memorial, $request->validated());
 
         return $this->created(new CommentResource($this->comments->find($comment->id)));

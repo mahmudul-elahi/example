@@ -13,8 +13,8 @@ use App\Models\User;
 use App\Services\UserServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 #[Group('Admin - User', weight: 100)]
 class UserController extends Controller
@@ -55,11 +55,8 @@ class UserController extends Controller
         return $this->success(new UserResource($updatedUser));
     }
 
-    public function destroy(Request $request, User $user): JsonResponse
+    public function destroy(User $user, #[CurrentUser] User $actor): JsonResponse
     {
-        /** @var User $actor */
-        $actor = $request->user();
-
         $this->userService->delete($user, $actor);
 
         return $this->success(null, 'User deleted successfully');
