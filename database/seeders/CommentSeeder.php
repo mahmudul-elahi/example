@@ -19,12 +19,12 @@ class CommentSeeder extends Seeder
     /**
      * How many listed models of each commentable type get a seeded thread.
      */
-    private const COMMENTABLE_COUNT = 5;
+    private const int COMMENTABLE_COUNT = 5;
 
     /**
      * How many top-level comments each thread starts with.
      */
-    private const COMMENTS_PER_MODEL = 2;
+    private const int COMMENTS_PER_MODEL = 2;
 
     /**
      * Seed comment threads on blog posts, memorials and products — the models

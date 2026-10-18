@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
     /**
      * The number of regular users seeded next to the admin account.
      */
-    private const REGULAR_USER_COUNT = 10;
+    private const int REGULAR_USER_COUNT = 10;
 
     /**
      * Seed one admin and ten verified regular users.

@@ -12,7 +12,7 @@ class TagSeeder extends Seeder
     /**
      * The tags blog posts are labelled with.
      */
-    private const TAGS = [
+    private const array TAGS = [
         'dogs',
         'cats',
         'birds',

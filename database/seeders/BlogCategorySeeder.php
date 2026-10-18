@@ -12,7 +12,7 @@ class BlogCategorySeeder extends Seeder
     /**
      * The categories the blog is seeded with.
      */
-    private const CATEGORIES = [
+    private const array CATEGORIES = [
         ['name' => 'Pet Loss', 'description' => 'Coping with the loss of a companion.'],
         ['name' => 'Memorial Stories', 'description' => 'The stories behind the memorials families create.'],
         ['name' => 'Pet Care', 'description' => 'Keeping pets healthy, happy and comfortable.'],

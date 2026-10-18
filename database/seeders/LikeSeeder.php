@@ -20,12 +20,12 @@ class LikeSeeder extends Seeder
     /**
      * How many listed models of each likeable type get seeded likes.
      */
-    private const LIKEABLE_COUNT = 5;
+    private const int LIKEABLE_COUNT = 5;
 
     /**
      * How many distinct users like each of those models.
      */
-    private const LIKES_PER_MODEL = 3;
+    private const int LIKES_PER_MODEL = 3;
 
     /**
      * Seed likes on blog posts, memorials and products — the models that
