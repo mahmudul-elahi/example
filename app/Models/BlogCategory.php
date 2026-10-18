@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Observers\BlogCategoryObserver;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Database\Factories\BlogCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable(['name', 'slug', 'description'])]
 #[RouteKey('slug')]
+#[ObservedBy([BlogCategoryObserver::class])]
 class BlogCategory extends Model
 {
     /** @use HasFactory<BlogCategoryFactory> */
