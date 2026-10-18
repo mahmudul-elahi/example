@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Public;
 
+use App\Enums\ResponseCacheTag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexCommentRequest;
 use App\Http\Resources\V1\CommentResource;
@@ -23,7 +24,7 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
-    #[Cache(lifetime: 600, tags: ['comments'])]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
     public function index(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
     {
         $comments = $this->comments->paginate($memorial, $request->perPage());

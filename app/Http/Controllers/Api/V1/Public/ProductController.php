@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Public;
 
+use App\Enums\ResponseCacheTag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexProductRequest;
 use App\Http\Requests\Api\V1\Public\ShowProductRequest;
@@ -24,7 +25,7 @@ class ProductController extends Controller
         protected ProductServiceInterface $products,
     ) {}
 
-    #[Cache(lifetime: 600, tags: ['shop'])]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Shop->value])]
     public function index(IndexProductRequest $request): JsonResponse
     {
         $products = $this->products->paginate($request->perPage(), $request->search(), true);
@@ -32,7 +33,7 @@ class ProductController extends Controller
         return $this->paginated($products, ProductResource::collection($products->items()));
     }
 
-    #[Cache(lifetime: 600, tags: ['shop'])]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Shop->value])]
     public function show(ShowProductRequest $request, Product $product): JsonResponse
     {
         return $this->success(new ProductResource($this->products->find($product->id)));

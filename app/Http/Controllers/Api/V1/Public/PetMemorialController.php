@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Public;
 
+use App\Enums\ResponseCacheTag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexPetMemorialRequest;
 use App\Http\Requests\Api\V1\Public\ShowPetMemorialRequest;
@@ -25,7 +26,7 @@ class PetMemorialController extends Controller
         protected PetMemorialServiceInterface $memorials,
     ) {}
 
-    #[Cache(lifetime: 600, tags: ['memorials'])]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Memorials->value])]
     public function index(IndexPetMemorialRequest $request): JsonResponse
     {
         $memorials = $this->memorials->paginate($request->perPage(), $request->search(), true);

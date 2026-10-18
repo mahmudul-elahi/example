@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Public;
 
+use App\Enums\ResponseCacheTag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexBlogPostRequest;
 use App\Http\Requests\Api\V1\Public\ShowBlogPostRequest;
@@ -25,7 +26,7 @@ class BlogPostController extends Controller
         protected BlogPostServiceInterface $posts,
     ) {}
 
-    #[Cache(lifetime: 600, tags: ['blog'])]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Blog->value])]
     public function index(IndexBlogPostRequest $request): JsonResponse
     {
         $posts = $this->posts->paginate($request->perPage(), $request->search(), true);
