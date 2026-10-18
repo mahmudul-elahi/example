@@ -5,19 +5,22 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\User;
 
 use App\Models\Comment;
-use App\Models\PetMemorial;
+use App\Traits\ResolvesRouteModel;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 
 class StoreCommentRequest extends FormRequest
 {
+    use ResolvesRouteModel;
+
     public function authorize(): bool
     {
-        $memorial = $this->route('memorial');
+        $commentable = $this->routeModel();
 
-        return $memorial instanceof PetMemorial
+        return $commentable instanceof Model
             && $this->user() !== null
-            && Gate::allows('view', $memorial)
+            && Gate::allows('view', $commentable)
             && $this->user()->can('create', Comment::class);
     }
 

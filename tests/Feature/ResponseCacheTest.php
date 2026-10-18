@@ -144,6 +144,64 @@ it('serves a memorial\'s comments from the cache and invalidates it when a comme
         ->assertJsonPath('data.meta.total', 2);
 });
 
+it('serves a blog post\'s comments from the cache and invalidates it when a comment is added', function (): void {
+    $post = BlogPost::factory()->create();
+    Comment::factory()->forCommentable($post)->create();
+
+    $this->getJson("/api/v1/blog/{$post->slug}/comments")
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 1);
+
+    // Serves from cache on subsequent read
+    $this->getJson("/api/v1/blog/{$post->slug}/comments")
+        ->assertOk()
+        ->assertHeader('X-Cache-Status', 'HIT')
+        ->assertJsonPath('data.meta.total', 1);
+
+    // Adding a comment on the post invalidates the thread
+    Comment::factory()->forCommentable($post)->create();
+
+    $this->getJson("/api/v1/blog/{$post->slug}/comments")
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 2);
+});
+
+it('serves a product\'s comments from the cache and invalidates it when a comment is added', function (): void {
+    $product = Product::factory()->create();
+    Comment::factory()->forCommentable($product)->create();
+
+    $this->getJson("/api/v1/shop/{$product->slug}/comments")
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 1);
+
+    // Serves from cache on subsequent read
+    $this->getJson("/api/v1/shop/{$product->slug}/comments")
+        ->assertOk()
+        ->assertHeader('X-Cache-Status', 'HIT')
+        ->assertJsonPath('data.meta.total', 1);
+
+    // Adding a comment on the product invalidates the thread
+    Comment::factory()->forCommentable($product)->create();
+
+    $this->getJson("/api/v1/shop/{$product->slug}/comments")
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 2);
+});
+
+it('invalidates the cached product when a comment on it changes', function (): void {
+    $product = Product::factory()->create();
+
+    $this->getJson("/api/v1/shop/{$product->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.comments_count', 0);
+
+    Comment::factory()->forCommentable($product)->create();
+
+    $this->getJson("/api/v1/shop/{$product->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.comments_count', 1);
+});
+
 it('invalidates the memorial index comments count when a comment is added', function (): void {
     $memorial = PetMemorial::factory()->create();
 

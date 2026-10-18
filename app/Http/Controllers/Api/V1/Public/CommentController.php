@@ -8,14 +8,19 @@ use App\Enums\ResponseCacheTag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexCommentRequest;
 use App\Http\Resources\V1\CommentResource;
+use App\Models\BlogPost;
 use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Services\CommentServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Spatie\ResponseCache\Attributes\Cache;
 
-#[Group('Memorials', weight: 10)]
+/**
+ * Every commentable shares one cached comment thread, so each resource gets a
+ * thin action that delegates to the comment service.
+ */
 class CommentController extends Controller
 {
     use ApiResponse;
@@ -24,10 +29,29 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
+    #[Group('Memorials', weight: 10)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
-    public function index(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
+    public function indexMemorial(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
     {
         $comments = $this->comments->paginate($memorial, $request->perPage());
+
+        return $this->paginated($comments, CommentResource::collection($comments->items()));
+    }
+
+    #[Group('Blog', weight: 20)]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
+    public function indexBlogPost(IndexCommentRequest $request, BlogPost $blogPost): JsonResponse
+    {
+        $comments = $this->comments->paginate($blogPost, $request->perPage());
+
+        return $this->paginated($comments, CommentResource::collection($comments->items()));
+    }
+
+    #[Group('Shop', weight: 30)]
+    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
+    public function indexProduct(IndexCommentRequest $request, Product $product): JsonResponse
+    {
+        $comments = $this->comments->paginate($product, $request->perPage());
 
         return $this->paginated($comments, CommentResource::collection($comments->items()));
     }

@@ -17,11 +17,13 @@ use Spatie\ResponseCache\Middlewares\CacheResponse;
 */
 Route::middleware(CacheResponse::class)->group(function (): void {
     Route::apiResource('memorials', PetMemorialController::class)->only(['index', 'show']);
-    Route::get('memorials/{memorial}/comments', [CommentController::class, 'index']);
+    Route::get('memorials/{memorial}/comments', [CommentController::class, 'indexMemorial']);
 
     Route::get('blog', [BlogPostController::class, 'index']);
     Route::get('blog/{blog_post}', [BlogPostController::class, 'show']);
+    Route::get('blog/{blog_post}/comments', [CommentController::class, 'indexBlogPost']);
 
     Route::get('shop', [ProductController::class, 'index']);
     Route::get('shop/{product}', [ProductController::class, 'show']);
+    Route::get('shop/{product}/comments', [CommentController::class, 'indexProduct']);
 });

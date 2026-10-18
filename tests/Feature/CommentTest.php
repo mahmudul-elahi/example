@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Enums\Roles;
+use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -135,7 +137,7 @@ describe('destroy', function (): void {
         $comment = Comment::factory()->forUser($author)->create();
 
         $this->actingAs($author, 'sanctum')
-            ->deleteJson("/api/v1/comments/{$comment->id}")
+            ->deleteJson("/api/v1/comments/memorials/{$comment->id}")
             ->assertOk()
             ->assertJsonPath('success', true);
 
@@ -148,7 +150,7 @@ describe('destroy', function (): void {
         $comment = Comment::factory()->forUser($author)->create();
 
         $this->actingAs($other, 'sanctum')
-            ->deleteJson("/api/v1/comments/{$comment->id}")
+            ->deleteJson("/api/v1/comments/memorials/{$comment->id}")
             ->assertForbidden();
 
         $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
@@ -159,9 +161,160 @@ describe('destroy', function (): void {
         $comment = Comment::factory()->create();
 
         $this->actingAs($admin, 'sanctum')
-            ->deleteJson("/api/v1/comments/{$comment->id}")
+            ->deleteJson("/api/v1/comments/memorials/{$comment->id}")
             ->assertOk();
 
         $this->assertSoftDeleted('comments', ['id' => $comment->id]);
     });
+
+    it('lets the author delete a comment on any content type', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $post = BlogPost::factory()->create();
+        $comment = Comment::factory()->forUser($author)->forCommentable($post)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->deleteJson("/api/v1/comments/blog-posts/{$comment->id}")
+            ->assertOk();
+
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
+    });
+
+    it('returns 404 when the comment belongs to another content type', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->deleteJson("/api/v1/comments/blog-posts/{$comment->id}")
+            ->assertNotFound();
+
+        $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
+    });
+
+    it('returns 404 when the content type is unknown', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->deleteJson("/api/v1/comments/tags/{$comment->id}")
+            ->assertNotFound();
+
+        $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
+    });
+});
+
+describe('blog posts', function (): void {
+    it('lists the comments of a post to a guest', function (): void {
+        $post = BlogPost::factory()->create();
+        $comment = Comment::factory()->forCommentable($post)->create();
+        Comment::factory()->forCommentable($post)->replyTo($comment)->create();
+
+        $this->getJson("/api/v1/blog/{$post->slug}/comments")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.id', $comment->id)
+            ->assertJsonPath('data.items.0.replies_count', 1);
+    });
+
+    it('forbids a guest from listing the comments of a draft post', function (): void {
+        $post = BlogPost::factory()->draft()->create();
+
+        $this->getJson("/api/v1/blog/{$post->slug}/comments")
+            ->assertForbidden();
+    });
+
+    it('creates a comment on a post and returns it with the author', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $post = BlogPost::factory()->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/blog/{$post->slug}/comments", ['body' => 'Great read.'])
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.body', 'Great read.')
+            ->assertJsonPath('data.author.id', $author->id);
+
+        $this->assertDatabaseHas('comments', [
+            'body' => 'Great read.',
+            'user_id' => $author->id,
+            'commentable_type' => BlogPost::class,
+            'commentable_id' => $post->id,
+        ]);
+    });
+
+    it('forbids a user from commenting on a draft post they cannot view', function (): void {
+        $user = User::factory()->withRole(Roles::User)->create();
+        $post = BlogPost::factory()->draft()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/blog/{$post->slug}/comments", ['body' => 'Not published yet.'])
+            ->assertForbidden();
+
+        expect($post->comments()->count())->toBe(0);
+    });
+});
+
+describe('products', function (): void {
+    it('lists the comments of a product to a guest', function (): void {
+        $product = Product::factory()->create();
+        $comment = Comment::factory()->forCommentable($product)->create();
+
+        $this->getJson("/api/v1/shop/{$product->slug}/comments")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.id', $comment->id);
+    });
+
+    it('forbids a guest from listing the comments of a draft product', function (): void {
+        $product = Product::factory()->draft()->create();
+
+        $this->getJson("/api/v1/shop/{$product->slug}/comments")
+            ->assertForbidden();
+    });
+
+    it('creates a comment on a product and returns it with the author', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $product = Product::factory()->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->postJson("/api/v1/shop/{$product->slug}/comments", ['body' => 'Exactly what I needed.'])
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.body', 'Exactly what I needed.')
+            ->assertJsonPath('data.author.id', $author->id);
+
+        $this->assertDatabaseHas('comments', [
+            'body' => 'Exactly what I needed.',
+            'user_id' => $author->id,
+            'commentable_type' => Product::class,
+            'commentable_id' => $product->id,
+        ]);
+    });
+
+    it('forbids a user from commenting on a draft product they cannot view', function (): void {
+        $user = User::factory()->withRole(Roles::User)->create();
+        $product = Product::factory()->draft()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/shop/{$product->slug}/comments", ['body' => 'Not listed yet.'])
+            ->assertForbidden();
+
+        expect($product->comments()->count())->toBe(0);
+    });
+});
+
+it('returns 422 when the parent comment belongs to another resource', function (): void {
+    $author = User::factory()->withRole(Roles::User)->create();
+    $memorial = PetMemorial::factory()->create();
+    $post = BlogPost::factory()->create();
+    $parent = Comment::factory()->forCommentable($memorial)->create();
+
+    $this->actingAs($author, 'sanctum')
+        ->postJson("/api/v1/blog/{$post->slug}/comments", [
+            'body' => 'Wrong thread.',
+            'parent_id' => $parent->id,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('parent_id');
 });

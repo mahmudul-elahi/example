@@ -57,7 +57,7 @@ it('documents the memorial comment and like endpoints', function (): void {
 
     expect($response->json('paths./v1/memorials/{memorial}/comments.get.tags'))->toBe(['Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}/comments.post.tags'))->toBe(['Memorials'])
-        ->and($response->json('paths./v1/comments/{comment}.delete.tags'))->toBe(['Memorials'])
+        ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}/like.post.tags'))->toBe(['Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}/like.delete.tags'))->toBe(['Memorials']);
 });
@@ -79,12 +79,36 @@ it('documents the admin content management endpoints', function (): void {
         ->and($response->json('paths./v1/admin/products.get.tags'))->toBe(['Admin - Shop']);
 });
 
+it('documents the blog and shop comment endpoints', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/blog/{blogPost}/comments.get.tags'))->toBe(['Blog'])
+        ->and($response->json('paths./v1/blog/{blogPost}/comments.post.tags'))->toBe(['Blog'])
+        ->and($response->json('paths./v1/shop/{product}/comments.get.tags'))->toBe(['Shop'])
+        ->and($response->json('paths./v1/shop/{product}/comments.post.tags'))->toBe(['Shop'])
+        ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['Memorials']);
+});
+
+it('documents one comment delete endpoint for every content type', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    $parameters = collect($response->json('paths./v1/comments/{type}/{comment}.delete.parameters'));
+
+    expect($parameters->pluck('name')->all())->toBe(['type', 'comment'])
+        ->and($parameters->firstWhere('name', 'comment')['schema']['type'])->toBe('integer')
+        ->and($parameters->firstWhere('name', 'type')['schema']['type'])->toBe('string')
+        // Deletion is addressed by content type now, so the untyped path is gone.
+        ->and($response->json('paths./v1/comments/{comment}'))->toBeNull();
+});
+
 it('marks the public blog listing as not requiring a bearer token', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
     expect($response->json('paths./v1/blog.get.security'))->toBe([])
         ->and($response->json('paths./v1/shop.get.security'))->toBe([])
-        ->and($response->json('paths./v1/memorials.get.security'))->toBe([]);
+        ->and($response->json('paths./v1/memorials.get.security'))->toBe([])
+        ->and($response->json('paths./v1/blog/{blogPost}/comments.get.security'))->toBe([])
+        ->and($response->json('paths./v1/shop/{product}/comments.get.security'))->toBe([]);
 });
 
 it('documents the admin dashboard endpoint under the Admin - Dashboard tag', function (): void {

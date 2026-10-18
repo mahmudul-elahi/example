@@ -5,17 +5,41 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\User;
 
 use App\Models\Comment;
+use App\Traits\ResolvesRouteModel;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DeleteCommentRequest extends FormRequest
 {
+    use ResolvesRouteModel;
+
+    private ?Comment $resolvedComment = null;
+
     public function authorize(): bool
     {
-        $comment = $this->route('comment');
+        $user = $this->user();
 
-        return $comment instanceof Comment
-            && $this->user() !== null
-            && $this->user()->can('delete', $comment);
+        return $user !== null && $user->can('delete', $this->comment());
+    }
+
+    /**
+     * The comment addressed by content type and comment id.
+     *
+     * @throws ModelNotFoundException when the content type is unknown or the comment belongs to another type
+     */
+    public function comment(): Comment
+    {
+        if ($this->resolvedComment instanceof Comment) {
+            return $this->resolvedComment;
+        }
+
+        $comment = Comment::query()->findOrFail((int) $this->route('comment'));
+
+        if ($comment->commentable_type !== $this->routeContentType()->modelClass()) {
+            throw new ModelNotFoundException;
+        }
+
+        return $this->resolvedComment = $comment;
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Enums\ResponseCacheTag;
 use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Traits\FlushesResponseCache;
 
 class CommentObserver
@@ -48,8 +49,8 @@ class CommentObserver
 
     /**
      * The commentable relation is polymorphic, so clear only the caches the
-     * affected model actually has: memorial comment threads plus the memorial
-     * index for memorials, and the blog index (comments_count) for posts.
+     * affected model actually has: the shared comment thread plus the resource
+     * index whose comments_count the new comment changes.
      */
     private function invalidate(Comment $comment): void
     {
@@ -62,7 +63,13 @@ class CommentObserver
         }
 
         if ($commentable instanceof BlogPost) {
-            $this->flushResponseCache(ResponseCacheTag::Blog);
+            $this->flushResponseCache(ResponseCacheTag::Comments, ResponseCacheTag::Blog);
+
+            return;
+        }
+
+        if ($commentable instanceof Product) {
+            $this->flushResponseCache(ResponseCacheTag::Comments, ResponseCacheTag::Shop);
         }
     }
 }
