@@ -66,4 +66,14 @@ class CommentRepository implements CommentRepositoryInterface
     {
         $comment->delete();
     }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Comment $comment, array $data): Comment
+    {
+        $comment->update($data);
+
+        return $comment;
+    }
 }

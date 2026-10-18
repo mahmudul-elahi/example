@@ -38,5 +38,10 @@ interface CommentRepositoryInterface
      */
     public function createFor(Model $commentable, array $data): Comment;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Comment $comment, array $data): Comment;
+
     public function delete(Comment $comment): void;
 }

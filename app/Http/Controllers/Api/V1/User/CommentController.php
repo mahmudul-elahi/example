@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\DeleteCommentRequest;
 use App\Http\Requests\Api\V1\User\StoreCommentRequest;
+use App\Http\Requests\Api\V1\User\UpdateCommentRequest;
 use App\Http\Resources\V1\CommentResource;
 use App\Models\BlogPost;
 use App\Models\PetMemorial;
@@ -63,5 +64,15 @@ class CommentController extends Controller
         $this->comments->delete($request->comment());
 
         return $this->success(null, 'Comment deleted successfully');
+    }
+
+    #[Group('User - Comments', weight: 70)]
+    #[Parameter('path', 'type', description: 'The content type: memorials, blog-posts or products.')]
+    #[Parameter('path', 'comment', description: 'The comment ID', type: 'integer')]
+    public function update(UpdateCommentRequest $request): JsonResponse
+    {
+        $comment = $this->comments->update($request->comment(), $request->validated());
+
+        return $this->success(new CommentResource($this->comments->find($comment->id)));
     }
 }

@@ -61,6 +61,14 @@ class CommentService implements CommentServiceInterface
     }
 
     /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Comment $comment, array $data): Comment
+    {
+        return $this->repository->update($comment, $data);
+    }
+
+    /**
      * @throws ValidationException
      */
     private function assertParentBelongsTo(Model $commentable, int $parentId): void

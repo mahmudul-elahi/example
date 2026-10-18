@@ -219,6 +219,90 @@ describe('destroy', function (): void {
     });
 });
 
+describe('update', function (): void {
+    it('lets the author update their own comment', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->putJson("/api/v1/comments/memorials/{$comment->id}", ['body' => 'Updated body.'])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.body', 'Updated body.');
+
+        $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Updated body.']);
+    });
+
+    it('forbids a non-author from updating a comment', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $other = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($other, 'sanctum')
+            ->putJson("/api/v1/comments/memorials/{$comment->id}", ['body' => 'Hacked.'])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('comments', ['id' => $comment->id, 'body' => 'Hacked.']);
+    });
+
+    it('lets an admin update any comment', function (): void {
+        $admin = User::factory()->withRole(Roles::Admin)->create();
+        $comment = Comment::factory()->create();
+
+        $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/v1/comments/memorials/{$comment->id}", ['body' => 'Admin edit.'])
+            ->assertOk()
+            ->assertJsonPath('data.body', 'Admin edit.');
+
+        $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Admin edit.']);
+    });
+
+    it('lets the author update a comment on any content type', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $post = BlogPost::factory()->create();
+        $comment = Comment::factory()->forUser($author)->forCommentable($post)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->putJson("/api/v1/comments/blog-posts/{$comment->id}", ['body' => 'Updated on blog.'])
+            ->assertOk()
+            ->assertJsonPath('data.body', 'Updated on blog.');
+
+        $this->assertDatabaseHas('comments', ['id' => $comment->id, 'body' => 'Updated on blog.']);
+    });
+
+    it('returns 404 when the comment belongs to another content type', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->putJson("/api/v1/comments/blog-posts/{$comment->id}", ['body' => 'Wrong type.'])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('comments', ['id' => $comment->id, 'body' => 'Wrong type.']);
+    });
+
+    it('returns 404 when the content type is unknown', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->putJson("/api/v1/comments/tags/{$comment->id}", ['body' => 'Wrong type.'])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('comments', ['id' => $comment->id, 'body' => 'Wrong type.']);
+    });
+
+    it('returns 422 when the body is missing', function (): void {
+        $author = User::factory()->withRole(Roles::User)->create();
+        $comment = Comment::factory()->forUser($author)->create();
+
+        $this->actingAs($author, 'sanctum')
+            ->putJson("/api/v1/comments/memorials/{$comment->id}", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('body');
+    });
+});
+
 describe('blog posts', function (): void {
     it('lists the comments of a post to a guest', function (): void {
         $post = BlogPost::factory()->create();
