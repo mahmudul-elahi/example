@@ -2,7 +2,6 @@
 
 use Spatie\ResponseCache\CacheProfiles\CacheAllSuccessfulGetRequests;
 use Spatie\ResponseCache\Hasher\DefaultHasher;
-use Spatie\ResponseCache\Replacers\CsrfTokenReplacer;
 use Spatie\ResponseCache\Serializers\JsonSerializer;
 
 return [
@@ -15,9 +14,13 @@ return [
         /*
          * Here you may define the cache store that should be used
          * to store requests. This can be the name of any store
-         * that is configured in your app's cache.php config
+         * that is configured in your app's cache.php config.
+         *
+         * Tag-based invalidation is used throughout the app, so this
+         * store must support tags: redis, memcached or array. The
+         * file and database drivers do NOT support tags.
          */
-        'store' => env('RESPONSE_CACHE_DRIVER', 'file'),
+        'store' => env('RESPONSE_CACHE_DRIVER', 'redis'),
 
         /*
          * The default number of seconds responses will be cached
@@ -56,7 +59,7 @@ return [
          * responses. This can be handy for debugging how
          * response caching is performing in your app.
          */
-        'enabled' => env('APP_DEBUG', false),
+        'enabled' => env('RESPONSE_CACHE_DEBUG', env('APP_DEBUG', false)),
 
         /*
          * The name of the http header containing the
@@ -119,8 +122,9 @@ return [
      * Here you may define the replacers that will replace
      * dynamic content from the response. Each replacer
      * must always implement the Replacer interface.
+     *
+     * This is an API-only application with no sessions or
+     * CSRF tokens, so no replacers are needed.
      */
-    'replacers' => [
-        CsrfTokenReplacer::class,
-    ],
+    'replacers' => [],
 ];
