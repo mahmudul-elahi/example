@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ResponseCacheTag;
 use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\PetMemorial;
-use Spatie\ResponseCache\Facades\ResponseCache;
+use App\Traits\FlushesResponseCache;
 
 class CommentObserver
 {
+    use FlushesResponseCache;
+
     /**
      * Handle the Comment "saved" event.
      */
@@ -53,13 +56,13 @@ class CommentObserver
         $commentable = $comment->commentable;
 
         if ($commentable instanceof PetMemorial) {
-            ResponseCache::clear(['comments', 'memorials']);
+            $this->flushResponseCache(ResponseCacheTag::Comments, ResponseCacheTag::Memorials);
 
             return;
         }
 
         if ($commentable instanceof BlogPost) {
-            ResponseCache::clear(['blog']);
+            $this->flushResponseCache(ResponseCacheTag::Blog);
         }
     }
 }

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ResponseCacheTag;
 use App\Models\Like;
 use App\Models\PetMemorial;
-use Spatie\ResponseCache\Facades\ResponseCache;
+use App\Traits\FlushesResponseCache;
 
 class LikeObserver
 {
+    use FlushesResponseCache;
+
     /**
      * Handle the Like "saved" event.
      */
@@ -33,7 +36,7 @@ class LikeObserver
     private function invalidate(Like $like): void
     {
         if ($like->likeable instanceof PetMemorial) {
-            ResponseCache::clear(['memorials']);
+            $this->flushResponseCache(ResponseCacheTag::Memorials);
         }
     }
 }

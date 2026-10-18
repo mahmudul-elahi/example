@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ResponseCacheTag;
 use App\Models\Product;
-use Spatie\ResponseCache\Facades\ResponseCache;
+use App\Traits\FlushesResponseCache;
 
 class ProductObserver
 {
+    use FlushesResponseCache;
+
     /**
      * Handle the Product "saved" event.
      */
     public function saved(Product $product): void
     {
-        $this->invalidate($product);
+        $this->invalidate();
     }
 
     /**
@@ -22,7 +25,7 @@ class ProductObserver
      */
     public function deleted(Product $product): void
     {
-        $this->invalidate($product);
+        $this->invalidate();
     }
 
     /**
@@ -30,7 +33,7 @@ class ProductObserver
      */
     public function restored(Product $product): void
     {
-        $this->invalidate($product);
+        $this->invalidate();
     }
 
     /**
@@ -38,14 +41,14 @@ class ProductObserver
      */
     public function forceDeleted(Product $product): void
     {
-        $this->invalidate($product);
+        $this->invalidate();
     }
 
     /**
      * Invalidate every cached variant of the shop index and product pages.
      */
-    private function invalidate(Product $product): void
+    private function invalidate(): void
     {
-        ResponseCache::clear(['shop']);
+        $this->flushResponseCache(ResponseCacheTag::Shop);
     }
 }

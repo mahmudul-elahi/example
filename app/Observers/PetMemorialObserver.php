@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ResponseCacheTag;
 use App\Models\PetMemorial;
-use Spatie\ResponseCache\Facades\ResponseCache;
+use App\Traits\FlushesResponseCache;
 
 class PetMemorialObserver
 {
+    use FlushesResponseCache;
+
     /**
      * Handle the PetMemorial "saved" event.
      */
     public function saved(PetMemorial $memorial): void
     {
-        $this->invalidate($memorial);
+        $this->invalidate();
     }
 
     /**
@@ -22,7 +25,7 @@ class PetMemorialObserver
      */
     public function deleted(PetMemorial $memorial): void
     {
-        $this->invalidate($memorial);
+        $this->invalidate();
     }
 
     /**
@@ -30,7 +33,7 @@ class PetMemorialObserver
      */
     public function restored(PetMemorial $memorial): void
     {
-        $this->invalidate($memorial);
+        $this->invalidate();
     }
 
     /**
@@ -38,15 +41,15 @@ class PetMemorialObserver
      */
     public function forceDeleted(PetMemorial $memorial): void
     {
-        $this->invalidate($memorial);
+        $this->invalidate();
     }
 
     /**
      * Invalidate every cached variant of the memorial index and the comment
      * threads, which the tags group together.
      */
-    private function invalidate(PetMemorial $memorial): void
+    private function invalidate(): void
     {
-        ResponseCache::clear(['memorials', 'comments']);
+        $this->flushResponseCache(ResponseCacheTag::Memorials, ResponseCacheTag::Comments);
     }
 }

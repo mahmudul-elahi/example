@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ResponseCacheTag;
 use App\Models\BlogCategory;
-use Spatie\ResponseCache\Facades\ResponseCache;
+use App\Traits\FlushesResponseCache;
 
 class BlogCategoryObserver
 {
+    use FlushesResponseCache;
+
     /**
      * Handle the BlogCategory "saved" event.
      */
     public function saved(BlogCategory $blogCategory): void
     {
-        $this->invalidate($blogCategory);
+        $this->invalidate();
     }
 
     /**
@@ -22,15 +25,15 @@ class BlogCategoryObserver
      */
     public function deleted(BlogCategory $blogCategory): void
     {
-        $this->invalidate($blogCategory);
+        $this->invalidate();
     }
 
     /**
      * Invalidate every cached variant of the blog index, which embeds the
      * category of each post.
      */
-    private function invalidate(BlogCategory $blogCategory): void
+    private function invalidate(): void
     {
-        ResponseCache::clear(['blog']);
+        $this->flushResponseCache(ResponseCacheTag::Blog);
     }
 }

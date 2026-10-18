@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ResponseCacheTag;
 use App\Models\BlogPost;
-use Spatie\ResponseCache\Facades\ResponseCache;
+use App\Traits\FlushesResponseCache;
 
 class BlogPostObserver
 {
+    use FlushesResponseCache;
+
     /**
      * Handle the BlogPost "saved" event.
      */
     public function saved(BlogPost $blogPost): void
     {
-        $this->invalidate($blogPost);
+        $this->invalidate();
     }
 
     /**
@@ -22,7 +25,7 @@ class BlogPostObserver
      */
     public function deleted(BlogPost $blogPost): void
     {
-        $this->invalidate($blogPost);
+        $this->invalidate();
     }
 
     /**
@@ -30,7 +33,7 @@ class BlogPostObserver
      */
     public function restored(BlogPost $blogPost): void
     {
-        $this->invalidate($blogPost);
+        $this->invalidate();
     }
 
     /**
@@ -38,14 +41,14 @@ class BlogPostObserver
      */
     public function forceDeleted(BlogPost $blogPost): void
     {
-        $this->invalidate($blogPost);
+        $this->invalidate();
     }
 
     /**
      * Invalidate every cached variant (pagination and search) of the blog index.
      */
-    private function invalidate(BlogPost $blogPost): void
+    private function invalidate(): void
     {
-        ResponseCache::clear(['blog']);
+        $this->flushResponseCache(ResponseCacheTag::Blog);
     }
 }
