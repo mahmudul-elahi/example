@@ -14,7 +14,7 @@ class BlogPostObserver
      */
     public function saved(BlogPost $blogPost): void
     {
-        $this->invalidate();
+        $this->invalidate($blogPost);
     }
 
     /**
@@ -22,7 +22,7 @@ class BlogPostObserver
      */
     public function deleted(BlogPost $blogPost): void
     {
-        $this->invalidate();
+        $this->invalidate($blogPost);
     }
 
     /**
@@ -30,7 +30,7 @@ class BlogPostObserver
      */
     public function restored(BlogPost $blogPost): void
     {
-        $this->invalidate();
+        $this->invalidate($blogPost);
     }
 
     /**
@@ -38,14 +38,14 @@ class BlogPostObserver
      */
     public function forceDeleted(BlogPost $blogPost): void
     {
-        $this->invalidate();
+        $this->invalidate($blogPost);
     }
 
     /**
-     * Invalidate cached blog responses.
+     * Invalidate every cached variant (pagination and search) of the blog index.
      */
-    private function invalidate(): void
+    private function invalidate(BlogPost $blogPost): void
     {
-        ResponseCache::forget('/api/v1/blog');
+        ResponseCache::clear(['blog']);
     }
 }

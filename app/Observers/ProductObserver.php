@@ -42,11 +42,10 @@ class ProductObserver
     }
 
     /**
-     * Invalidate cached shop and product responses.
+     * Invalidate every cached variant of the shop index and product pages.
      */
     private function invalidate(Product $product): void
     {
-        ResponseCache::forget('/api/v1/shop');
-        ResponseCache::forget("/api/v1/shop/{$product->slug}");
+        ResponseCache::clear(['shop']);
     }
 }

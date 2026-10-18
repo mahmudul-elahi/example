@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\PetMemorial;
 use Spatie\ResponseCache\Facades\ResponseCache;
@@ -43,15 +44,22 @@ class CommentObserver
     }
 
     /**
-     * Invalidate cached comment threads and affected memorial lists.
+     * The commentable relation is polymorphic, so clear only the caches the
+     * affected model actually has: memorial comment threads plus the memorial
+     * index for memorials, and the blog index (comments_count) for posts.
      */
     private function invalidate(Comment $comment): void
     {
         $commentable = $comment->commentable;
 
         if ($commentable instanceof PetMemorial) {
-            ResponseCache::forget("/api/v1/memorials/{$commentable->slug}/comments");
-            ResponseCache::forget('/api/v1/memorials');
+            ResponseCache::clear(['comments', 'memorials']);
+
+            return;
+        }
+
+        if ($commentable instanceof BlogPost) {
+            ResponseCache::clear(['blog']);
         }
     }
 }

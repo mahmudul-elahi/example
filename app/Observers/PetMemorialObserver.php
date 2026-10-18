@@ -42,11 +42,11 @@ class PetMemorialObserver
     }
 
     /**
-     * Invalidate cached memorial responses.
+     * Invalidate every cached variant of the memorial index and the comment
+     * threads, which the tags group together.
      */
     private function invalidate(PetMemorial $memorial): void
     {
-        ResponseCache::forget('/api/v1/memorials');
-        ResponseCache::forget("/api/v1/memorials/{$memorial->slug}/comments");
+        ResponseCache::clear(['memorials', 'comments']);
     }
 }
