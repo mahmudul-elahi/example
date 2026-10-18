@@ -24,7 +24,7 @@ class ProductController extends Controller
         protected ProductServiceInterface $products,
     ) {}
 
-    #[Cache(lifetime: 600)]
+    #[Cache(lifetime: 600, tags: ['shop'])]
     public function index(IndexProductRequest $request): JsonResponse
     {
         $products = $this->products->paginate($request->perPage(), $request->search(), true);
@@ -32,7 +32,7 @@ class ProductController extends Controller
         return $this->paginated($products, ProductResource::collection($products->items()));
     }
 
-    #[Cache(lifetime: 600)]
+    #[Cache(lifetime: 600, tags: ['shop'])]
     public function show(ShowProductRequest $request, Product $product): JsonResponse
     {
         return $this->success(new ProductResource($this->products->find($product->id)));

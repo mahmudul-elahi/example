@@ -23,7 +23,7 @@ class CommentController extends Controller
         protected CommentServiceInterface $comments,
     ) {}
 
-    #[Cache(lifetime: 600)]
+    #[Cache(lifetime: 600, tags: ['comments'])]
     public function index(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
     {
         $comments = $this->comments->paginate($memorial, $request->perPage());

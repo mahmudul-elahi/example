@@ -25,7 +25,7 @@ class BlogPostController extends Controller
         protected BlogPostServiceInterface $posts,
     ) {}
 
-    #[Cache(lifetime: 600)]
+    #[Cache(lifetime: 600, tags: ['blog'])]
     public function index(IndexBlogPostRequest $request): JsonResponse
     {
         $posts = $this->posts->paginate($request->perPage(), $request->search(), true);

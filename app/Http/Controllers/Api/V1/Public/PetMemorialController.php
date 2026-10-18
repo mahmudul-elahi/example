@@ -25,7 +25,7 @@ class PetMemorialController extends Controller
         protected PetMemorialServiceInterface $memorials,
     ) {}
 
-    #[Cache(lifetime: 600)]
+    #[Cache(lifetime: 600, tags: ['memorials'])]
     public function index(IndexPetMemorialRequest $request): JsonResponse
     {
         $memorials = $this->memorials->paginate($request->perPage(), $request->search(), true);
