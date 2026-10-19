@@ -189,3 +189,14 @@ it('does not expose the author email on the public blog', function (): void {
         ])
         ->assertJsonMissingPath('data.items.0.author.email');
 });
+
+it('filters the admin post list by status', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    BlogPost::factory()->count(2)->create();
+    BlogPost::factory()->draft()->create();
+
+    $this->actingAs($admin, 'sanctum')
+        ->getJson('/api/v1/admin/blog-posts?status=draft')
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 1);
+});

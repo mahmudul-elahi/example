@@ -38,4 +38,9 @@ class IndexBlogPostRequest extends FormRequest
     {
         return $this->filled('search') ? (string) $this->input('search') : null;
     }
+
+    public function status(): ?PostStatus
+    {
+        return $this->filled('status') ? PostStatus::tryFrom((string) $this->input('status')) : null;
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Enums\PostStatus;
 use App\Models\BlogPost;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -13,7 +14,7 @@ class BlogPostRepository implements BlogPostRepositoryInterface
     /**
      * @return LengthAwarePaginator<int, BlogPost>
      */
-    public function paginate(int $perPage, ?string $search, bool $publishedOnly): LengthAwarePaginator
+    public function paginate(int $perPage, ?string $search, bool $publishedOnly, ?PostStatus $status = null): LengthAwarePaginator
     {
         $perPage = min(max($perPage, 1), 100);
 
@@ -21,6 +22,9 @@ class BlogPostRepository implements BlogPostRepositoryInterface
             ->with(['user', 'category'])
             ->withCount(['comments', 'likes'])
             ->when($publishedOnly, fn (Builder $query): Builder => $query->published())
+            ->when($status, function (Builder $query, PostStatus $status): void {
+                $query->where('status', $status->value);
+            })
             ->when($search, function (Builder $query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {
                     $q->where('title', 'like', "%{$search}%")

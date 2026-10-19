@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Enums\PostStatus;
 use App\Models\BlogPost;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
@@ -16,7 +17,7 @@ interface BlogPostRepositoryInterface
     /**
      * @return LengthAwarePaginator<int, BlogPost>
      */
-    public function paginate(int $perPage, ?string $search, bool $publishedOnly): LengthAwarePaginator;
+    public function paginate(int $perPage, ?string $search, bool $publishedOnly, ?PostStatus $status = null): LengthAwarePaginator;
 
     public function find(int $id): BlogPost;
 

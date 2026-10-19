@@ -28,7 +28,7 @@ class BlogPostController extends Controller
 
     public function index(IndexBlogPostRequest $request): JsonResponse
     {
-        $posts = $this->posts->paginate($request->perPage(), $request->search(), false);
+        $posts = $this->posts->paginate($request->perPage(), $request->search(), false, $request->status());
 
         return $this->paginated($posts, BlogPostResource::collection($posts->items()));
     }
