@@ -35,7 +35,7 @@ class BlogPostResource extends JsonResource
             'likes_count' => $this->whenCounted('likes'),
             'category' => new BlogCategoryResource($this->whenLoaded('category')),
             'tags' => TagResource::collection($this->whenLoaded('tags')),
-            'author' => new UserResource($this->whenLoaded('user')),
+            'author' => new AuthorResource($this->whenLoaded('user')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

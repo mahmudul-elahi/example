@@ -174,3 +174,18 @@ it('keeps a post cover image on soft delete and removes it on force delete', fun
 
     Storage::assertMissing('covers/welcome.jpg');
 });
+
+it('does not expose the author email on the public blog', function (): void {
+    BlogPost::factory()->create();
+
+    $this->getJson('/api/v1/blog')
+        ->assertOk()
+        ->assertJsonStructure([
+            'data' => [
+                'items' => [
+                    '*' => ['author' => ['id', 'name', 'avatar']],
+                ],
+            ],
+        ])
+        ->assertJsonMissingPath('data.items.0.author.email');
+});

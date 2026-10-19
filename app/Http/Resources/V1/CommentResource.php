@@ -22,7 +22,7 @@ class CommentResource extends JsonResource
             'id' => $this->id,
             'body' => $this->body,
             'parent_id' => $this->parent_id,
-            'author' => new UserResource($this->whenLoaded('user')),
+            'author' => new AuthorResource($this->whenLoaded('user')),
             'replies_count' => $this->whenCounted('replies'),
             'replies' => self::collection($this->whenLoaded('replies')),
             'created_at' => $this->created_at?->toIso8601String(),

@@ -430,3 +430,19 @@ it('returns 422 when the parent comment belongs to another resource', function (
         ->assertUnprocessable()
         ->assertJsonValidationErrors('parent_id');
 });
+
+it('does not expose the comment author email to a guest', function (): void {
+    $memorial = PetMemorial::factory()->create();
+    Comment::factory()->forCommentable($memorial)->create();
+
+    $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+        ->assertOk()
+        ->assertJsonStructure([
+            'data' => [
+                'items' => [
+                    '*' => ['author' => ['id', 'name', 'avatar']],
+                ],
+            ],
+        ])
+        ->assertJsonMissingPath('data.items.0.author.email');
+});
