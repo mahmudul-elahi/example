@@ -210,3 +210,44 @@ it('forbids another user from deleting a memorial', function (): void {
         ->deleteJson("/api/v1/memorials/{$memorial->slug}")
         ->assertForbidden();
 });
+
+it('rejects a pet passed date before the pet born date', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/v1/memorials', [
+            'title' => 'Goodbye Rex',
+            'body' => 'A loving companion.',
+            'pet_name' => 'Rex',
+            'pet_born_at' => '2020-01-01',
+            'pet_passed_at' => '2019-01-01',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('pet_passed_at');
+});
+
+it('rejects a pet passed date before the stored pet born date', function (): void {
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $memorial = PetMemorial::factory()->forUser($owner)->create([
+        'pet_born_at' => '2020-01-01',
+        'pet_passed_at' => '2024-01-01',
+    ]);
+
+    $this->actingAs($owner, 'sanctum')
+        ->putJson("/api/v1/memorials/{$memorial->slug}", ['pet_passed_at' => '2019-01-01'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('pet_passed_at');
+});
+
+it('accepts a pet passed date on or after the stored pet born date', function (): void {
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $memorial = PetMemorial::factory()->forUser($owner)->create([
+        'pet_born_at' => '2020-01-01',
+        'pet_passed_at' => '2024-01-01',
+    ]);
+
+    $this->actingAs($owner, 'sanctum')
+        ->putJson("/api/v1/memorials/{$memorial->slug}", ['pet_passed_at' => '2023-06-01'])
+        ->assertOk()
+        ->assertJsonPath('data.pet_passed_at', '2023-06-01');
+});
