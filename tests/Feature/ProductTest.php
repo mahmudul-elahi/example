@@ -210,3 +210,36 @@ it('filters the admin product list by status', function (): void {
         ->assertOk()
         ->assertJsonPath('data.meta.total', 1);
 });
+
+it('accepts a compare at price above the stored price without resending the price', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $product = Product::factory()->create(['price' => '100.00']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/products/{$product->slug}", ['compare_at_price' => '120.00'])
+        ->assertOk()
+        ->assertJsonPath('data.compare_at_price', '120.00');
+});
+
+it('rejects a compare at price below the stored price', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $product = Product::factory()->create(['price' => '100.00']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/products/{$product->slug}", ['compare_at_price' => '80.00'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('compare_at_price');
+});
+
+it('rejects a compare at price below a price sent in the same request', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $product = Product::factory()->create(['price' => '100.00']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/products/{$product->slug}", [
+            'price' => '100.00',
+            'compare_at_price' => '80.00',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('compare_at_price');
+});
