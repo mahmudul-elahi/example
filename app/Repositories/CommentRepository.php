@@ -64,6 +64,10 @@ class CommentRepository implements CommentRepositoryInterface
 
     public function delete(Comment $comment): void
     {
+        // Replies hang off the top-level comment, so remove them together with
+        // it. Otherwise deleting a thread leaves orphaned replies behind.
+        $comment->replies()->delete();
+
         $comment->delete();
     }
 

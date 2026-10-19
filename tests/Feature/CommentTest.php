@@ -446,3 +446,16 @@ it('does not expose the comment author email to a guest', function (): void {
         ])
         ->assertJsonMissingPath('data.items.0.author.email');
 });
+
+it('soft deletes the replies along with their comment', function (): void {
+    $author = User::factory()->withRole(Roles::User)->create();
+    $comment = Comment::factory()->forUser($author)->create();
+    $reply = Comment::factory()->forUser($author)->replyTo($comment)->create();
+
+    $this->actingAs($author, 'sanctum')
+        ->deleteJson("/api/v1/comments/memorials/{$comment->id}")
+        ->assertOk();
+
+    $this->assertSoftDeleted('comments', ['id' => $comment->id]);
+    $this->assertSoftDeleted('comments', ['id' => $reply->id]);
+});
