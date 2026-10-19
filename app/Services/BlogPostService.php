@@ -54,7 +54,7 @@ class BlogPostService implements BlogPostServiceInterface
             $data['cover_image'] = $this->storeCoverImage($data['cover_image']);
         }
 
-        $data = $this->stampPublication($data);
+        $data = $this->stampPublication($data, $post);
 
         $post = $this->repository->update($post, $data);
 
@@ -76,23 +76,37 @@ class BlogPostService implements BlogPostServiceInterface
     }
 
     /**
-     * Set the publication timestamp the first time a post becomes published.
+     * Stamp the publication timestamp the first time a post becomes published,
+     * without resetting a date already set on an earlier publication.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function stampPublication(array $data): array
+    private function stampPublication(array $data, ?BlogPost $post = null): array
     {
-        $status = $data['status'] ?? null;
-        $becomingPublished = $status instanceof PostStatus
-            ? $status === PostStatus::Published
-            : $status === PostStatus::Published->value;
-
-        if ($becomingPublished && ! isset($data['published_at'])) {
-            $data['published_at'] = now();
+        if (array_key_exists('published_at', $data) || ! $this->isBecomingPublished($data)) {
+            return $data;
         }
 
+        if ($post?->published_at !== null) {
+            return $data;
+        }
+
+        $data['published_at'] = now();
+
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function isBecomingPublished(array $data): bool
+    {
+        $status = $data['status'] ?? null;
+
+        return $status instanceof PostStatus
+            ? $status === PostStatus::Published
+            : $status === PostStatus::Published->value;
     }
 
     /**

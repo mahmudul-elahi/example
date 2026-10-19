@@ -200,3 +200,29 @@ it('filters the admin post list by status', function (): void {
         ->assertOk()
         ->assertJsonPath('data.meta.total', 1);
 });
+
+it('stamps the publication date when a draft is first published', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $post = BlogPost::factory()->draft()->create();
+
+    $this->travelTo('2026-01-01 09:00:00');
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/blog-posts/{$post->slug}", ['status' => PostStatus::Published->value])
+        ->assertOk();
+
+    expect($post->refresh()->published_at?->toDateTimeString())->toBe('2026-01-01 09:00:00');
+});
+
+it('keeps the original publication date when a published post is updated again', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $post = BlogPost::factory()->create(['published_at' => '2025-06-01 08:00:00']);
+
+    $this->travelTo('2026-01-01 09:00:00');
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/blog-posts/{$post->slug}", ['status' => PostStatus::Published->value])
+        ->assertOk();
+
+    expect($post->refresh()->published_at?->toDateTimeString())->toBe('2025-06-01 08:00:00');
+});
