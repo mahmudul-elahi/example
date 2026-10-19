@@ -10,11 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class LikeRepository implements LikeRepositoryInterface
 {
-    public function exists(User $user, Model $likeable): bool
-    {
-        return $likeable->likes()->where('user_id', $user->id)->exists();
-    }
-
     public function create(User $user, Model $likeable): Like
     {
         return $likeable->likes()->firstOrCreate(['user_id' => $user->id]);

@@ -8,7 +8,6 @@ use App\Models\Comment;
 use App\Models\User;
 use App\Repositories\CommentRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 
@@ -17,14 +16,6 @@ class CommentService implements CommentServiceInterface
     public function __construct(
         protected CommentRepositoryInterface $repository,
     ) {}
-
-    /**
-     * @return LengthAwarePaginator<int, Comment>
-     */
-    public function paginate(Model $commentable, int $perPage): LengthAwarePaginator
-    {
-        return $this->repository->paginateFor($commentable, $perPage);
-    }
 
     /**
      * @return CursorPaginator<int, Comment>

@@ -14,8 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 #[Scoped]
 interface LikeRepositoryInterface
 {
-    public function exists(User $user, Model $likeable): bool;
-
     public function create(User $user, Model $likeable): Like;
 
     public function delete(User $user, Model $likeable): void;

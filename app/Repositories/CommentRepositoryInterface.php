@@ -8,20 +8,12 @@ use App\Models\Comment;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 
 #[Bind(CommentRepository::class)]
 #[Scoped]
 interface CommentRepositoryInterface
 {
-    /**
-     * Paginate the top-level comments of a commentable model with their replies.
-     *
-     * @return LengthAwarePaginator<int, Comment>
-     */
-    public function paginateFor(Model $commentable, int $perPage): LengthAwarePaginator;
-
     /**
      * Cursor-paginate the top-level comments of a commentable model with their replies.
      *
