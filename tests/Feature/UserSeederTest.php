@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Roles;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;

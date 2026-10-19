@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\OtpPurpose;
 use App\Models\OtpCode;
 use App\Models\User;
