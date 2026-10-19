@@ -38,4 +38,9 @@ class IndexProductRequest extends FormRequest
     {
         return $this->filled('search') ? (string) $this->input('search') : null;
     }
+
+    public function status(): ?ProductStatus
+    {
+        return $this->filled('status') ? ProductStatus::tryFrom((string) $this->input('status')) : null;
+    }
 }

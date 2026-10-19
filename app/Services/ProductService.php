@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ProductStatus;
 use App\Models\Product;
 use App\Models\User;
 use App\Repositories\ProductRepositoryInterface;
@@ -20,9 +21,9 @@ class ProductService implements ProductServiceInterface
     /**
      * @return LengthAwarePaginator<int, Product>
      */
-    public function paginate(int $perPage, ?string $search, bool $publishedOnly): LengthAwarePaginator
+    public function paginate(int $perPage, ?string $search, bool $publishedOnly, ?ProductStatus $status = null): LengthAwarePaginator
     {
-        return $this->repository->paginate($perPage, $search, $publishedOnly);
+        return $this->repository->paginate($perPage, $search, $publishedOnly, $status);
     }
 
     public function find(int $id): Product

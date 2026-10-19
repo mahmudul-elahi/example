@@ -199,3 +199,14 @@ it('exposes comment and like counts in the shop listing', function (): void {
         ->assertJsonPath('data.items.0.comments_count', 1)
         ->assertJsonPath('data.items.0.likes_count', 1);
 });
+
+it('filters the admin product list by status', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    Product::factory()->count(2)->create();
+    Product::factory()->draft()->create();
+
+    $this->actingAs($admin, 'sanctum')
+        ->getJson('/api/v1/admin/products?status=draft')
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 1);
+});

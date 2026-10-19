@@ -28,7 +28,7 @@ class ProductController extends Controller
 
     public function index(IndexProductRequest $request): JsonResponse
     {
-        $products = $this->products->paginate($request->perPage(), $request->search(), false);
+        $products = $this->products->paginate($request->perPage(), $request->search(), false, $request->status());
 
         return $this->paginated($products, ProductResource::collection($products->items()));
     }

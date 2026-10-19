@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ProductStatus;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
@@ -17,7 +18,7 @@ interface ProductServiceInterface
     /**
      * @return LengthAwarePaginator<int, Product>
      */
-    public function paginate(int $perPage, ?string $search, bool $publishedOnly): LengthAwarePaginator;
+    public function paginate(int $perPage, ?string $search, bool $publishedOnly, ?ProductStatus $status = null): LengthAwarePaginator;
 
     public function find(int $id): Product;
 
