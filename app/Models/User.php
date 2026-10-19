@@ -123,4 +123,24 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Like::class);
     }
+
+    /**
+     * The friend requests the user has sent.
+     *
+     * @return HasMany<FriendRequest, $this>
+     */
+    public function sentFriendRequests(): HasMany
+    {
+        return $this->hasMany(FriendRequest::class, 'sender_id');
+    }
+
+    /**
+     * The friend requests the user has received.
+     *
+     * @return HasMany<FriendRequest, $this>
+     */
+    public function receivedFriendRequests(): HasMany
+    {
+        return $this->hasMany(FriendRequest::class, 'receiver_id');
+    }
 }

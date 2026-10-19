@@ -41,6 +41,7 @@ it('orders the tags by their configured weight', function (): void {
             'User - Shop',
             'User - Comments',
             'User - Likes',
+            'User - Friends',
             'Admin - User',
             'Admin - Dashboard',
             'Admin - Blog',
@@ -119,6 +120,20 @@ it('documents one unlike endpoint for every likeable type', function (): void {
         ->and($response->json('paths./v1/memorials/{memorial}/like.delete'))->toBeNull()
         ->and($response->json('paths./v1/blog/{blogPost}/like.delete'))->toBeNull()
         ->and($response->json('paths./v1/shop/{product}/like.delete'))->toBeNull();
+});
+
+it('documents the friend request endpoints under the User - Friends tag', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/friend-requests.get.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friend-requests.post.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friend-requests.post.requestBody.content.application/json.schema.$ref'))
+        ->toBe('#/components/schemas/StoreFriendRequestRequest')
+        ->and($response->json('paths./v1/friend-requests/count.get.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friend-requests/{friendRequest}/accept.post.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friend-requests/{friendRequest}/reject.post.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friend-requests/{friendRequest}.delete.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friends.get.tags'))->toBe(['User - Friends']);
 });
 
 it('marks the public blog listing as not requiring a bearer token', function (): void {
