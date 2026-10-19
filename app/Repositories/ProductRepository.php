@@ -19,6 +19,7 @@ class ProductRepository implements ProductRepositoryInterface
 
         return Product::query()
             ->with('user')
+            ->withCount(['comments', 'likes'])
             ->when($publishedOnly, fn (Builder $query): Builder => $query->published())
             ->when($search, function (Builder $query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {

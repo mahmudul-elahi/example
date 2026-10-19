@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Enums\ProductStatus;
 use App\Enums\Roles;
+use App\Models\Comment;
+use App\Models\Like;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -185,4 +187,15 @@ it('keeps a product cover image on soft delete and removes it on force delete', 
     $product->forceDelete();
 
     Storage::assertMissing('covers/frame.jpg');
+});
+
+it('exposes comment and like counts in the shop listing', function (): void {
+    $product = Product::factory()->create();
+    Comment::factory()->forCommentable($product)->create();
+    Like::factory()->forLikeable($product)->create();
+
+    $this->getJson('/api/v1/shop')
+        ->assertOk()
+        ->assertJsonPath('data.items.0.comments_count', 1)
+        ->assertJsonPath('data.items.0.likes_count', 1);
 });
