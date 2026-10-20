@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Enums\OtpPurpose;
 use App\Models\User;
-use App\Notifications\EmailVerificationOtpNotification;
+use App\Notifications\Auth\EmailVerificationOtpNotification;
 use Illuminate\Validation\ValidationException;
 
 class EmailVerificationService implements EmailVerificationServiceInterface

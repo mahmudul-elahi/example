@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Enums\OtpPurpose;
 use App\Models\User;
-use App\Notifications\PasswordResetOtpNotification;
+use App\Notifications\Auth\PasswordResetOtpNotification;
 use App\Repositories\UserRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
