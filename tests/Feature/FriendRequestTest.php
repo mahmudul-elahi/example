@@ -175,7 +175,7 @@ it('forbids the receiver from cancelling a request', function (): void {
     $this->assertDatabaseHas('friend_requests', ['id' => $friendRequest->id]);
 });
 
-it('lists received requests with the pending count', function (): void {
+it('lists only received pending requests', function (): void {
     $receiver = User::factory()->withRole(Roles::User)->create();
     $other = User::factory()->withRole(Roles::User)->create();
     FriendRequest::factory()->to($receiver)->count(2)->create();
@@ -185,7 +185,6 @@ it('lists received requests with the pending count', function (): void {
         ->getJson('/api/v1/friend-requests')
         ->assertOk()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.meta.pending_count', 2)
         ->assertJsonPath('data.meta.per_page', 15)
         ->assertJsonCount(2, 'data.items')
         ->assertJsonStructure([
@@ -193,7 +192,7 @@ it('lists received requests with the pending count', function (): void {
                 'items' => [
                     '*' => ['id', 'status', 'sender' => ['id', 'name'], 'receiver' => ['id', 'name']],
                 ],
-                'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'pending_count'],
+                'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
             ],
         ]);
 });

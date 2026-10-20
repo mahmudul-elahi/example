@@ -36,11 +36,7 @@ class FriendRequestController extends Controller
     {
         $requests = $this->friendRequests->received($user, $request->perPage(), $request->cursor());
 
-        return $this->cursorPaginated(
-            $requests,
-            FriendRequestResource::collection($requests->items()),
-            meta: ['pending_count' => $this->friendRequests->pendingCount($user)],
-        );
+        return $this->cursorPaginated($requests, FriendRequestResource::collection($requests->items()));
     }
 
     public function count(#[CurrentUser] User $user): JsonResponse

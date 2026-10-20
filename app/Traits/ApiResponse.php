@@ -46,19 +46,16 @@ trait ApiResponse
 
     /**
      * @param  CursorPaginator<int, mixed>  $paginator
-     * @param  array<string, mixed>  $meta  Extra metadata merged into the pagination meta.
      */
     protected function cursorPaginated(
         CursorPaginator $paginator,
         JsonResource $items,
         string $message = 'Success',
-        int $code = Response::HTTP_OK,
-        array $meta = []
+        int $code = Response::HTTP_OK
     ): JsonResponse {
         return $this->success([
             'items' => $items,
             'meta' => [
-                ...$meta,
                 'per_page' => $paginator->perPage(),
                 'next_cursor' => $paginator->nextCursor()?->encode(),
                 'prev_cursor' => $paginator->previousCursor()?->encode(),
