@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -20,13 +21,16 @@ use Illuminate\Support\Carbon;
  * @property-read int $receiver_id
  * @property-read FriendRequestStatus $status
  * @property-read Carbon|null $responded_at
+ * @property-read Carbon|null $request_notified_at
+ * @property-read Carbon|null $accepted_notified_at
+ * @property-read Carbon|null $deleted_at
  */
-#[Fillable(['sender_id', 'receiver_id', 'status', 'responded_at'])]
+#[Fillable(['sender_id', 'receiver_id', 'status', 'responded_at', 'request_notified_at', 'accepted_notified_at'])]
 #[ObservedBy([FriendRequestObserver::class])]
 class FriendRequest extends Model
 {
     /** @use HasFactory<FriendRequestFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -36,6 +40,8 @@ class FriendRequest extends Model
         return [
             'status' => FriendRequestStatus::class,
             'responded_at' => 'datetime',
+            'request_notified_at' => 'datetime',
+            'accepted_notified_at' => 'datetime',
         ];
     }
 

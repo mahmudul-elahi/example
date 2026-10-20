@@ -160,7 +160,7 @@ it('lets the sender cancel a pending request', function (): void {
         ->assertJsonPath('success', true)
         ->assertJsonPath('data', null);
 
-    $this->assertDatabaseMissing('friend_requests', ['id' => $friendRequest->id]);
+    $this->assertSoftDeleted('friend_requests', ['id' => $friendRequest->id]);
 });
 
 it('forbids the receiver from cancelling a request', function (): void {
@@ -173,6 +173,107 @@ it('forbids the receiver from cancelling a request', function (): void {
         ->assertForbidden();
 
     $this->assertDatabaseHas('friend_requests', ['id' => $friendRequest->id]);
+});
+
+it('restores a cancelled request when the sender tries again', function (): void {
+    $sender = User::factory()->withRole(Roles::User)->create();
+    $receiver = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    $this->actingAs($sender, 'sanctum')
+        ->deleteJson("/api/v1/friend-requests/{$friendRequest->id}")
+        ->assertOk();
+
+    $this->assertSoftDeleted('friend_requests', ['id' => $friendRequest->id]);
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'pending');
+
+    expect(FriendRequest::withTrashed()->count())->toBe(1);
+
+    $this->assertDatabaseHas('friend_requests', [
+        'id' => $friendRequest->id,
+        'status' => FriendRequestStatus::Pending->value,
+        'deleted_at' => null,
+    ]);
+});
+
+it('lets a user unfriend an accepted friend', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    $friend = User::factory()->withRole(Roles::User)->create();
+
+    FriendRequest::factory()->from($me)->to($friend)->accepted()->create();
+
+    $this->actingAs($me, 'sanctum')
+        ->deleteJson("/api/v1/friends/{$friend->id}")
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data', null);
+
+    $this->assertSoftDeleted('friend_requests', [
+        'sender_id' => $me->id,
+        'receiver_id' => $friend->id,
+    ]);
+
+    $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends')
+        ->assertOk()
+        ->assertJsonCount(0, 'data.items');
+});
+
+it('forbids unfriending a user that is not a friend', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    $stranger = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($me, 'sanctum')
+        ->deleteJson("/api/v1/friends/{$stranger->id}")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('user_id');
+});
+
+it('lets friends send a new request after unfriending', function (): void {
+    $sender = User::factory()->withRole(Roles::User)->create();
+    $receiver = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    $this->actingAs($receiver, 'sanctum')
+        ->postJson("/api/v1/friend-requests/{$friendRequest->id}/accept")
+        ->assertOk();
+
+    $this->actingAs($sender, 'sanctum')
+        ->deleteJson("/api/v1/friends/{$receiver->id}")
+        ->assertOk();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'pending');
+
+    expect(FriendRequest::withTrashed()->count())->toBe(1);
+
+    $this->assertDatabaseHas('friend_requests', [
+        'id' => $friendRequest->id,
+        'status' => FriendRequestStatus::Pending->value,
+        'deleted_at' => null,
+    ]);
 });
 
 it('lists only received pending requests', function (): void {
@@ -238,6 +339,9 @@ it('lists only accepted friends', function (): void {
     FriendRequest::factory()->from($me)->to($friend)->accepted()->create();
     FriendRequest::factory()->from($incoming)->to($me)->accepted()->create();
     FriendRequest::factory()->from($me)->to($pending)->create();
+
+    $removed = User::factory()->withRole(Roles::User)->create(['name' => 'Removed Friend']);
+    FriendRequest::factory()->from($me)->to($removed)->accepted()->create()->delete();
 
     $this->actingAs($me, 'sanctum')
         ->getJson('/api/v1/friends')

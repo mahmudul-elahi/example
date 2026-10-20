@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\FriendRequestStatus;
 use App\Enums\NotificationType;
 use App\Enums\Roles;
 use App\Models\FriendRequest;
@@ -22,6 +23,13 @@ it('notifies the receiver when a friend request is sent', function (): void {
 
     expect($receiver->notifications()->count())->toBe(1);
 
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    expect($friendRequest->request_notified_at)->not->toBeNull();
+
     $notification = $receiver->notifications()->first();
 
     expect($notification->type)->toBe(NotificationType::FriendRequestReceived->value)
@@ -40,55 +48,155 @@ it('notifies the sender when the receiver accepts the request', function (): voi
         ->postJson("/api/v1/friend-requests/{$friendRequest->id}/accept")
         ->assertOk();
 
+    $friendRequest->refresh();
     $notification = $sender->notifications()->first();
 
-    expect($notification)->not->toBeNull()
+    expect($friendRequest->accepted_notified_at)->not->toBeNull()
+        ->and($notification)->not->toBeNull()
         ->and($notification->type)->toBe(NotificationType::FriendRequestAccepted->value)
         ->and($notification->data['message'])->toBe("{$receiver->name} accepted your friend request.")
-        ->and($notification->data['data']['actor']['id'])->toBe($receiver->id);
+        ->and($notification->data['data']['actor']['id'])->toBe($receiver->id)
+        ->and($receiver->notifications()->count())->toBe(0);
 });
 
-it('notifies the sender when the receiver rejects the request', function (): void {
+it('stays silent when the receiver rejects the request', function (): void {
     $sender = User::factory()->withRole(Roles::User)->create();
     $receiver = User::factory()->withRole(Roles::User)->create();
     $friendRequest = FriendRequest::factory()->from($sender)->to($receiver)->create();
+
+    expect($receiver->notifications()->count())->toBe(1);
 
     $this->actingAs($receiver, 'sanctum')
         ->postJson("/api/v1/friend-requests/{$friendRequest->id}/reject")
         ->assertOk();
 
-    $notification = $sender->notifications()->first();
-
-    expect($notification)->not->toBeNull()
-        ->and($notification->type)->toBe(NotificationType::FriendRequestRejected->value)
-        ->and($notification->data['data']['actor']['id'])->toBe($receiver->id);
+    expect($sender->notifications()->count())->toBe(0)
+        ->and($receiver->notifications()->count())->toBe(0);
 });
 
-it('notifies the receiver again when a rejected request is resent', function (): void {
+it('stays silent when a rejected request is resent', function (): void {
     $sender = User::factory()->withRole(Roles::User)->create();
     $receiver = User::factory()->withRole(Roles::User)->create();
-    FriendRequest::factory()->from($sender)->to($receiver)->rejected()->create();
 
     $this->actingAs($sender, 'sanctum')
         ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
         ->assertCreated();
 
-    expect($receiver->notifications()->count())->toBe(1)
-        ->and($receiver->notifications()->first()->type)->toBe(NotificationType::FriendRequestReceived->value);
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    expect($receiver->notifications()->count())->toBe(1);
+
+    $this->actingAs($receiver, 'sanctum')
+        ->postJson("/api/v1/friend-requests/{$friendRequest->id}/reject")
+        ->assertOk();
+
+    expect($receiver->notifications()->count())->toBe(0);
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    expect($receiver->notifications()->count())->toBe(0)
+        ->and($sender->notifications()->count())->toBe(0);
 });
 
-it('does not notify anyone when a request is cancelled', function (): void {
+it('removes the received notification and stays silent when a request is cancelled', function (): void {
     $sender = User::factory()->withRole(Roles::User)->create();
     $receiver = User::factory()->withRole(Roles::User)->create();
-    $friendRequest = FriendRequest::factory()->from($sender)->to($receiver)->create();
 
-    $receiver->notifications()->delete();
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    expect($receiver->notifications()->count())->toBe(1);
 
     $this->actingAs($sender, 'sanctum')
         ->deleteJson("/api/v1/friend-requests/{$friendRequest->id}")
         ->assertOk();
 
+    $this->assertSoftDeleted('friend_requests', ['id' => $friendRequest->id]);
+
+    expect($receiver->notifications()->count())->toBe(0)
+        ->and($sender->notifications()->count())->toBe(0);
+});
+
+it('stays silent when a cancelled request is resent', function (): void {
+    $sender = User::factory()->withRole(Roles::User)->create();
+    $receiver = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    $this->actingAs($sender, 'sanctum')
+        ->deleteJson("/api/v1/friend-requests/{$friendRequest->id}")
+        ->assertOk();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    $this->assertDatabaseHas('friend_requests', [
+        'id' => $friendRequest->id,
+        'status' => FriendRequestStatus::Pending->value,
+        'deleted_at' => null,
+    ]);
+
+    expect($receiver->notifications()->count())->toBe(0)
+        ->and($sender->notifications()->count())->toBe(0);
+});
+
+it('notifies only on the first request and first acceptance', function (): void {
+    $sender = User::factory()->withRole(Roles::User)->create();
+    $receiver = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
+    $friendRequest = FriendRequest::query()
+        ->where('sender_id', $sender->id)
+        ->where('receiver_id', $receiver->id)
+        ->firstOrFail();
+
+    expect($receiver->notifications()->count())->toBe(1);
+
+    $this->actingAs($receiver, 'sanctum')
+        ->postJson("/api/v1/friend-requests/{$friendRequest->id}/accept")
+        ->assertOk();
+
+    expect($sender->notifications()->count())->toBe(1)
+        ->and($receiver->notifications()->count())->toBe(0);
+
+    $this->actingAs($sender, 'sanctum')
+        ->deleteJson("/api/v1/friends/{$receiver->id}")
+        ->assertOk();
+
+    $this->actingAs($sender, 'sanctum')
+        ->postJson('/api/v1/friend-requests', ['user_id' => $receiver->id])
+        ->assertCreated();
+
     expect($receiver->notifications()->count())->toBe(0);
+
+    $this->actingAs($receiver, 'sanctum')
+        ->postJson("/api/v1/friend-requests/{$friendRequest->id}/accept")
+        ->assertOk();
+
+    expect($sender->notifications()->count())->toBe(1)
+        ->and(FriendRequest::withTrashed()->count())->toBe(1);
 });
 
 it('requires authentication to view notifications', function (): void {

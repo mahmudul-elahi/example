@@ -30,6 +30,7 @@ class FriendRequestRepository implements FriendRequestRepositoryInterface
     public function findBetween(int $senderId, int $receiverId): ?FriendRequest
     {
         return FriendRequest::query()
+            ->withTrashed()
             ->where(function (Builder $query) use ($senderId, $receiverId): void {
                 $query->where('sender_id', $senderId)->where('receiver_id', $receiverId);
             })

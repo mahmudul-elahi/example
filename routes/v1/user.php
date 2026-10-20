@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('friend-requests/{friend_request}/reject', [FriendRequestController::class, 'reject']);
     Route::delete('friend-requests/{friend_request}', [FriendRequestController::class, 'destroy']);
     Route::get('friends', [FriendRequestController::class, 'friends']);
+    Route::delete('friends/{friend}', [FriendRequestController::class, 'unfriend']);
 
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/count', [NotificationController::class, 'count']);

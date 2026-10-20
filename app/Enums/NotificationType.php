@@ -15,7 +15,6 @@ enum NotificationType: string
 {
     case FriendRequestReceived = 'friend_request_received';
     case FriendRequestAccepted = 'friend_request_accepted';
-    case FriendRequestRejected = 'friend_request_rejected';
 
     /**
      * @return list<string>

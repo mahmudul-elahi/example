@@ -20,8 +20,8 @@ use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 /**
- * The friend request lifecycle: send, list received/sent, accept, reject and
- * cancel. Accepted requests become friendships, listed under friends().
+ * The friend request lifecycle: send, list received, accept, reject, cancel,
+ * list friends and unfriend. Accepted requests become friendships.
  */
 #[Group('User - Friends', weight: 90)]
 class FriendRequestController extends Controller
@@ -77,5 +77,12 @@ class FriendRequestController extends Controller
         $friends = $this->friendRequests->friends($user, $request->perPage(), $request->cursor());
 
         return $this->cursorPaginated($friends, AuthorResource::collection($friends->items()), 'Friends');
+    }
+
+    public function unfriend(User $friend, #[CurrentUser] User $user): JsonResponse
+    {
+        $this->friendRequests->unfriend($user, $friend);
+
+        return $this->success(null, 'Friend removed');
     }
 }

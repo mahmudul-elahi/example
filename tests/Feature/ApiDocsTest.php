@@ -134,7 +134,8 @@ it('documents the friend request endpoints under the User - Friends tag', functi
         ->and($response->json('paths./v1/friend-requests/{friendRequest}/accept.post.tags'))->toBe(['User - Friends'])
         ->and($response->json('paths./v1/friend-requests/{friendRequest}/reject.post.tags'))->toBe(['User - Friends'])
         ->and($response->json('paths./v1/friend-requests/{friendRequest}.delete.tags'))->toBe(['User - Friends'])
-        ->and($response->json('paths./v1/friends.get.tags'))->toBe(['User - Friends']);
+        ->and($response->json('paths./v1/friends.get.tags'))->toBe(['User - Friends'])
+        ->and($response->json('paths./v1/friends/{friend}.delete.tags'))->toBe(['User - Friends']);
 });
 
 it('documents the notification endpoints under the User - Notifications tag', function (): void {

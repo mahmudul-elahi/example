@@ -35,6 +35,11 @@ interface FriendRequestServiceInterface
     public function cancel(User $user, FriendRequest $friendRequest): void;
 
     /**
+     * Remove an accepted friendship so either user can send a new request.
+     */
+    public function unfriend(User $user, User $friend): void;
+
+    /**
      * The pending requests the user has received.
      *
      * @return CursorPaginator<int, FriendRequest>

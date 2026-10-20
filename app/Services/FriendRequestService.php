@@ -30,20 +30,26 @@ class FriendRequestService implements FriendRequestServiceInterface
             $existing = $this->repository->findBetween($sender->id, $receiver->id);
 
             if ($existing instanceof FriendRequest) {
-                if ($existing->status === FriendRequestStatus::Accepted) {
-                    throw ValidationException::withMessages([
-                        'user_id' => 'You are already friends with this user.',
-                    ]);
+                if (! $existing->trashed()) {
+                    if ($existing->status === FriendRequestStatus::Accepted) {
+                        throw ValidationException::withMessages([
+                            'user_id' => 'You are already friends with this user.',
+                        ]);
+                    }
+
+                    if ($existing->status === FriendRequestStatus::Pending) {
+                        throw ValidationException::withMessages([
+                            'user_id' => 'A friend request between you and this user is already pending.',
+                        ]);
+                    }
                 }
 
-                if ($existing->status === FriendRequestStatus::Pending) {
-                    throw ValidationException::withMessages([
-                        'user_id' => 'A friend request between you and this user is already pending.',
-                    ]);
+                // Reuse the pair's row after a rejection, cancellation or
+                // unfriend so the unique sender/receiver pair is preserved.
+                if ($existing->trashed()) {
+                    $existing->restoreQuietly();
                 }
 
-                // An earlier request was rejected: reuse the row so either side
-                // can try again without tripping the unique sender/receiver pair.
                 return $this->repository->update($existing, [
                     'sender_id' => $sender->id,
                     'receiver_id' => $receiver->id,
@@ -73,6 +79,21 @@ class FriendRequestService implements FriendRequestServiceInterface
     public function cancel(User $user, FriendRequest $friendRequest): void
     {
         $this->repository->delete($friendRequest);
+    }
+
+    public function unfriend(User $user, User $friend): void
+    {
+        $friendship = $this->repository->findBetween($user->id, $friend->id);
+
+        if (! $friendship instanceof FriendRequest
+            || $friendship->trashed()
+            || $friendship->status !== FriendRequestStatus::Accepted) {
+            throw ValidationException::withMessages([
+                'user_id' => 'You are not friends with this user.',
+            ]);
+        }
+
+        $this->repository->delete($friendship);
     }
 
     public function received(User $user, int $perPage, ?string $cursor): CursorPaginator
