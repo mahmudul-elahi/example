@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\User\CommentController;
 use App\Http\Controllers\Api\V1\User\FriendRequestController;
 use App\Http\Controllers\Api\V1\User\LikeController;
+use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\PetMemorialController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,4 +30,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('friend-requests/{friend_request}/reject', [FriendRequestController::class, 'reject']);
     Route::delete('friend-requests/{friend_request}', [FriendRequestController::class, 'destroy']);
     Route::get('friends', [FriendRequestController::class, 'friends']);
+
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::get('notifications/count', [NotificationController::class, 'count']);
+    Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
 });
