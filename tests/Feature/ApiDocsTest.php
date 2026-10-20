@@ -42,6 +42,7 @@ it('orders the tags by their configured weight', function (): void {
             'User - Comments',
             'User - Likes',
             'User - Friends',
+            'User - Notifications',
             'Admin - User',
             'Admin - Dashboard',
             'Admin - Blog',
@@ -134,6 +135,17 @@ it('documents the friend request endpoints under the User - Friends tag', functi
         ->and($response->json('paths./v1/friend-requests/{friendRequest}/reject.post.tags'))->toBe(['User - Friends'])
         ->and($response->json('paths./v1/friend-requests/{friendRequest}.delete.tags'))->toBe(['User - Friends'])
         ->and($response->json('paths./v1/friends.get.tags'))->toBe(['User - Friends']);
+});
+
+it('documents the notification endpoints under the User - Notifications tag', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/notifications.get.tags'))->toBe(['User - Notifications'])
+        ->and($response->json('paths./v1/notifications/count.get.tags'))->toBe(['User - Notifications'])
+        ->and($response->json('paths./v1/notifications/read-all.post.tags'))->toBe(['User - Notifications'])
+        ->and($response->json('paths./v1/notifications/{notification}/read.post.tags'))->toBe(['User - Notifications'])
+        ->and($response->json('paths./v1/notifications.get.responses.200.content.application/json.schema.properties.data.properties.items.items.$ref'))
+        ->toBe('#/components/schemas/NotificationResource');
 });
 
 it('marks the public blog listing as not requiring a bearer token', function (): void {
