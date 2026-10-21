@@ -8,10 +8,21 @@ use App\Enums\Roles;
 use App\Models\FriendRequest;
 use App\Models\User;
 use App\Notifications\Base\NotificationActor;
+use App\Notifications\FriendRequest\FriendRequestAcceptedNotification;
 use App\Notifications\FriendRequest\FriendRequestReceivedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+function notifyPendingFriendRequest(User $recipient, User $sender): void
+{
+    $friendRequest = FriendRequest::factory()->from($sender)->to($recipient)->createQuietly();
+
+    $recipient->notify(new FriendRequestReceivedNotification(
+        $friendRequest->id,
+        NotificationActor::fromUser($sender),
+    ));
+}
 
 it('notifies the receiver when a friend request is sent', function (): void {
     $sender = User::factory()->withRole(Roles::User)->create();
@@ -199,6 +210,40 @@ it('notifies only on the first request and first acceptance', function (): void 
         ->and(FriendRequest::withTrashed()->count())->toBe(1);
 });
 
+it('skips a queued received notification once the request is no longer pending', function (): void {
+    $sender = User::factory()->create();
+    $receiver = User::factory()->create();
+    $friendRequest = FriendRequest::factory()->from($sender)->to($receiver)->create();
+    $notification = new FriendRequestReceivedNotification(
+        $friendRequest->id,
+        NotificationActor::fromUser($sender),
+    );
+
+    expect($notification->shouldSend($receiver, 'database'))->toBeTrue();
+
+    $friendRequest->updateQuietly(['status' => FriendRequestStatus::Rejected]);
+
+    expect($notification->shouldSend($receiver, 'database'))->toBeFalse()
+        ->and($notification->shouldSend($sender, 'database'))->toBeFalse();
+});
+
+it('skips a queued accepted notification once the friendship is removed', function (): void {
+    $sender = User::factory()->create();
+    $receiver = User::factory()->create();
+    $friendRequest = FriendRequest::factory()->from($sender)->to($receiver)->accepted()->create();
+    $notification = new FriendRequestAcceptedNotification(
+        $friendRequest->id,
+        NotificationActor::fromUser($receiver),
+    );
+
+    expect($notification->shouldSend($sender, 'database'))->toBeTrue();
+
+    $friendRequest->delete();
+
+    expect($notification->shouldSend($sender, 'database'))->toBeFalse()
+        ->and($notification->shouldSend($receiver, 'database'))->toBeFalse();
+});
+
 it('requires authentication to view notifications', function (): void {
     $this->getJson('/api/v1/notifications')
         ->assertUnauthorized();
@@ -207,10 +252,13 @@ it('requires authentication to view notifications', function (): void {
 it('lists the authenticated user\'s notifications', function (): void {
     $user = User::factory()->withRole(Roles::User)->create();
     $other = User::factory()->withRole(Roles::User)->create();
+    $alice = User::factory()->create(['name' => 'Alice']);
+    $bob = User::factory()->create(['name' => 'Bob']);
+    $eve = User::factory()->create(['name' => 'Eve']);
 
-    $user->notify(new FriendRequestReceivedNotification(1, new NotificationActor(2, 'Alice')));
-    $user->notify(new FriendRequestReceivedNotification(2, new NotificationActor(3, 'Bob')));
-    $other->notify(new FriendRequestReceivedNotification(3, new NotificationActor(4, 'Eve')));
+    notifyPendingFriendRequest($user, $alice);
+    notifyPendingFriendRequest($user, $bob);
+    notifyPendingFriendRequest($other, $eve);
 
     $this->actingAs($user, 'sanctum')
         ->getJson('/api/v1/notifications')
@@ -239,9 +287,11 @@ it('lists the authenticated user\'s notifications', function (): void {
 
 it('returns the unread notification count', function (): void {
     $user = User::factory()->withRole(Roles::User)->create();
+    $alice = User::factory()->create(['name' => 'Alice']);
+    $bob = User::factory()->create(['name' => 'Bob']);
 
-    $user->notify(new FriendRequestReceivedNotification(1, new NotificationActor(2, 'Alice')));
-    $user->notify(new FriendRequestReceivedNotification(2, new NotificationActor(3, 'Bob')));
+    notifyPendingFriendRequest($user, $alice);
+    notifyPendingFriendRequest($user, $bob);
 
     $user->notifications()->first()->markAsRead();
 
@@ -254,7 +304,8 @@ it('returns the unread notification count', function (): void {
 
 it('marks one notification as read', function (): void {
     $user = User::factory()->withRole(Roles::User)->create();
-    $user->notify(new FriendRequestReceivedNotification(1, new NotificationActor(2, 'Alice')));
+    $alice = User::factory()->create(['name' => 'Alice']);
+    notifyPendingFriendRequest($user, $alice);
 
     $notification = $user->notifications()->first();
 
@@ -269,8 +320,8 @@ it('marks one notification as read', function (): void {
 it('forbids marking another user\'s notification as read', function (): void {
     $user = User::factory()->withRole(Roles::User)->create();
     $other = User::factory()->withRole(Roles::User)->create();
-
-    $other->notify(new FriendRequestReceivedNotification(1, new NotificationActor(2, 'Alice')));
+    $alice = User::factory()->create(['name' => 'Alice']);
+    notifyPendingFriendRequest($other, $alice);
 
     $notification = $other->notifications()->first();
 
@@ -283,9 +334,11 @@ it('forbids marking another user\'s notification as read', function (): void {
 
 it('marks all notifications as read', function (): void {
     $user = User::factory()->withRole(Roles::User)->create();
+    $alice = User::factory()->create(['name' => 'Alice']);
+    $bob = User::factory()->create(['name' => 'Bob']);
 
-    $user->notify(new FriendRequestReceivedNotification(1, new NotificationActor(2, 'Alice')));
-    $user->notify(new FriendRequestReceivedNotification(2, new NotificationActor(3, 'Bob')));
+    notifyPendingFriendRequest($user, $alice);
+    notifyPendingFriendRequest($user, $bob);
 
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/v1/notifications/read-all')
