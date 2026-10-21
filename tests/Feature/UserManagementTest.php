@@ -3,10 +3,16 @@
 declare(strict_types=1);
 
 use App\Enums\Roles;
+use App\Models\BlogPost;
+use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Models\User;
+use App\Services\UserServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
@@ -281,6 +287,89 @@ it('updates a user', function (): void {
     ]);
 });
 
+it('resets email verification when an admin changes the email', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->create(['email' => 'old@example.test']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$user->id}", ['email' => 'new@example.test'])
+        ->assertOk()
+        ->assertJsonPath('data.email', 'new@example.test')
+        ->assertJsonPath('data.email_verified', false);
+
+    expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+});
+
+it('keeps email verification when another profile field changes', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$user->id}", ['name' => 'Renamed'])
+        ->assertOk()
+        ->assertJsonPath('data.email_verified', true);
+
+    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
+});
+
+it('keeps the new email verified when the admin explicitly verifies it', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->unverified()->create(['email' => 'old@example.test']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$user->id}", [
+            'email' => 'new@example.test',
+            'email_verified' => true,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.email_verified', true);
+
+    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
+});
+
+it('revokes the user tokens when the password changes', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->create();
+    $user->createToken('phone');
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$user->id}", ['password' => 'new-password'])
+        ->assertOk();
+
+    $this->assertDatabaseCount('personal_access_tokens', 0);
+});
+
+it('prevents demoting the last admin', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$admin->id}", ['role' => 'user'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('role');
+
+    expect($admin->fresh()->isAdmin())->toBeTrue();
+});
+
+it('allows demoting an admin when another admin exists', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $otherAdmin = User::factory()->withRole(Roles::Admin)->create();
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$otherAdmin->id}", ['role' => 'user'])
+        ->assertOk()
+        ->assertJsonPath('data.role', 'user');
+});
+
+it('prevents deleting the last admin', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $actor = User::factory()->withRole(Roles::User)->create();
+
+    expect(fn () => resolve(UserServiceInterface::class)->delete($admin, $actor))
+        ->toThrow(ValidationException::class);
+
+    $this->assertDatabaseHas('users', ['id' => $admin->id]);
+});
+
 it('deletes a user', function (): void {
     $admin = User::factory()->withRole(Roles::Admin)->create();
     $user = User::factory()->withRole(Roles::User)->create();
@@ -292,6 +381,57 @@ it('deletes a user', function (): void {
         ->assertJsonPath('message', 'User deleted successfully');
 
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
+});
+
+it('deletes the user tokens and notifications', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->create();
+    $user->createToken('phone');
+    $user->notifications()->create([
+        'id' => (string) Str::uuid(),
+        'type' => 'test',
+        'data' => ['message' => 'Test notification'],
+    ]);
+
+    $this->actingAs($admin, 'sanctum')
+        ->deleteJson("/api/v1/admin/users/{$user->id}")
+        ->assertOk();
+
+    $this->assertDatabaseCount('personal_access_tokens', 0);
+    $this->assertDatabaseMissing('notifications', [
+        'notifiable_type' => User::class,
+        'notifiable_id' => $user->id,
+    ]);
+});
+
+it('deletes the cover images of the content the user authored', function (): void {
+    Storage::fake();
+
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->create();
+    $post = BlogPost::factory()->forUser($user)->create(['cover_image' => 'blog/cover.jpg']);
+    $memorial = PetMemorial::factory()->forUser($user)->create(['cover_image' => 'memorials/cover.jpg']);
+    $product = Product::factory()->forUser($user)->create(['cover_image' => 'products/cover.jpg']);
+    $trashedPost = BlogPost::factory()->forUser($user)->create(['cover_image' => 'blog/trashed.jpg']);
+    $trashedPost->delete();
+
+    foreach (['blog/cover.jpg', 'memorials/cover.jpg', 'products/cover.jpg', 'blog/trashed.jpg'] as $path) {
+        Storage::put($path, 'image');
+    }
+
+    $this->actingAs($admin, 'sanctum')
+        ->deleteJson("/api/v1/admin/users/{$user->id}")
+        ->assertOk();
+
+    Storage::assertMissing('blog/cover.jpg');
+    Storage::assertMissing('memorials/cover.jpg');
+    Storage::assertMissing('products/cover.jpg');
+    Storage::assertMissing('blog/trashed.jpg');
+
+    $this->assertDatabaseMissing('blog_posts', ['id' => $post->id]);
+    $this->assertDatabaseMissing('pet_memorials', ['id' => $memorial->id]);
+    $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    $this->assertDatabaseMissing('blog_posts', ['id' => $trashedPost->id]);
 });
 
 it('prevents an admin from deleting their own account', function (): void {
