@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('otp_codes', function (Blueprint $table): void {
             $table->id();
-            $table->string('email');
+            $table->foreignId('user_id');
             $table->string('purpose')->default(OtpPurpose::EmailVerification->value);
             $table->string('code');
             $table->unsignedTinyInteger('attempts')->default(0);
@@ -22,7 +22,8 @@ return new class extends Migration
             $table->timestamp('consumed_at')->nullable();
             $table->timestamps();
 
-            $table->index(['email', 'purpose']);
+            $table->index(['user_id', 'purpose']);
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 
