@@ -39,7 +39,8 @@ it('shows a published product to a guest', function (): void {
     $this->getJson("/api/v1/shop/{$product->slug}")
         ->assertOk()
         ->assertJsonPath('data.id', $product->id)
-        ->assertJsonPath('data.name', $product->name);
+        ->assertJsonPath('data.name', $product->name)
+        ->assertJsonPath('data.description', $product->description);
 });
 
 it('forbids a guest from viewing a draft product', function (): void {
@@ -47,6 +48,14 @@ it('forbids a guest from viewing a draft product', function (): void {
 
     $this->getJson("/api/v1/shop/{$product->slug}")
         ->assertForbidden();
+});
+
+it('omits the product description from the public index', function (): void {
+    Product::factory()->create();
+
+    $this->getJson('/api/v1/shop')
+        ->assertOk()
+        ->assertJsonMissingPath('data.items.0.description');
 });
 
 it('forbids non-admin users from managing products', function (): void {
@@ -109,6 +118,23 @@ it('derives the in_stock flag from the stock count', function (): void {
         ])
         ->assertCreated()
         ->assertJsonPath('data.in_stock', false);
+});
+
+it('keeps the in_stock flag aligned when a product is saved directly', function (): void {
+    $product = Product::factory()->create(['stock' => 0]);
+
+    expect($product->fresh()->in_stock)->toBeFalse();
+
+    $product->update(['stock' => 3]);
+
+    expect($product->fresh()->in_stock)->toBeTrue();
+});
+
+it('creates in-stock products by factory default', function (): void {
+    $product = Product::factory()->create();
+
+    expect($product->stock)->toBeGreaterThan(0)
+        ->and($product->fresh()->in_stock)->toBeTrue();
 });
 
 it('rejects invalid input when an admin creates a product', function (): void {
