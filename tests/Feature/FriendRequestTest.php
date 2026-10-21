@@ -330,6 +330,31 @@ it('returns the pending request count', function (): void {
         ->assertJsonPath('data.pending_count', 3);
 });
 
+it('paginates friends with a cursor', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    $friends = User::factory()->withRole(Roles::User)->count(3)->create();
+
+    $friends->each(function (User $friend) use ($me): void {
+        FriendRequest::factory()->from($me)->to($friend)->accepted()->create();
+    });
+
+    $firstPage = $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends?per_page=1')
+        ->assertOk()
+        ->assertJsonCount(1, 'data.items');
+
+    $cursor = $firstPage->json('data.meta.next_cursor');
+
+    expect($cursor)->not->toBeNull();
+
+    $secondPage = $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends?per_page=1&cursor='.urlencode((string) $cursor))
+        ->assertOk()
+        ->assertJsonCount(1, 'data.items');
+
+    expect($secondPage->json('data.items.0.id'))->not->toBe($firstPage->json('data.items.0.id'));
+});
+
 it('lists only accepted friends', function (): void {
     $me = User::factory()->withRole(Roles::User)->create();
     $friend = User::factory()->withRole(Roles::User)->create(['name' => 'Friend One']);
