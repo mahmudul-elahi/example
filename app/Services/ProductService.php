@@ -38,7 +38,6 @@ class ProductService implements ProductServiceInterface
     {
         $data['user_id'] = $author->id;
         $data['cover_image'] = $this->storeCoverImage($data['cover_image'] ?? null);
-        $data = $this->deriveInStock($data);
 
         return $this->repository->create($data);
     }
@@ -54,8 +53,6 @@ class ProductService implements ProductServiceInterface
             $data['cover_image'] = $this->storeCoverImage($data['cover_image']);
         }
 
-        $data = $this->deriveInStock($data);
-
         $product = $this->repository->update($product, $data);
 
         if ($obsoleteCover !== null) {
@@ -68,22 +65,6 @@ class ProductService implements ProductServiceInterface
     public function delete(Product $product): void
     {
         $this->repository->delete($product);
-    }
-
-    /**
-     * Keep the boolean "in_stock" flag in step with the stock count whenever it
-     * is provided, so the two never drift apart.
-     *
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    private function deriveInStock(array $data): array
-    {
-        if (array_key_exists('stock', $data)) {
-            $data['in_stock'] = (int) $data['stock'] > 0;
-        }
-
-        return $data;
     }
 
     /**
