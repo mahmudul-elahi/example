@@ -62,10 +62,20 @@ class UserService implements UserServiceInterface
     public function update(User $user, array $data): User
     {
         $obsoleteAvatar = array_key_exists('avatar', $data) ? $user->avatar : null;
+        $emailChanged = isset($data['email']) && $data['email'] !== $user->email;
+        $emailVerifiedProvided = array_key_exists('email_verified', $data);
 
-        $user = DB::transaction(function () use ($user, $data): User {
+        $user = DB::transaction(function () use ($user, $data, $emailChanged, $emailVerifiedProvided): User {
             if (isset($data['role'])) {
-                $user->setRole(Roles::from($data['role']));
+                $role = Roles::from($data['role']);
+
+                if ($user->isAdmin() && $role !== Roles::Admin && ! $this->repository->hasOtherAdmin($user)) {
+                    throw ValidationException::withMessages([
+                        'role' => 'The last admin cannot be demoted.',
+                    ]);
+                }
+
+                $user->setRole($role);
                 unset($data['role']);
             }
 
@@ -78,7 +88,9 @@ class UserService implements UserServiceInterface
                 unset($data['email_verified']);
             }
 
-            if (empty($data['password'])) {
+            $passwordChanged = ! empty($data['password']);
+
+            if (! $passwordChanged) {
                 unset($data['password']);
             }
 
@@ -89,6 +101,14 @@ class UserService implements UserServiceInterface
 
             if ($data !== []) {
                 $user = $this->repository->update($user, $data);
+            }
+
+            if ($emailChanged && ! $emailVerifiedProvided) {
+                $user->forceFill(['email_verified_at' => null])->save();
+            }
+
+            if ($passwordChanged) {
+                $user->tokens()->delete();
             }
 
             return $this->repository->loadRoles($user);
@@ -109,12 +129,25 @@ class UserService implements UserServiceInterface
             ]);
         }
 
-        $avatar = $user->avatar;
+        if ($user->isAdmin() && ! $this->repository->hasOtherAdmin($user)) {
+            throw ValidationException::withMessages([
+                'user' => ['The last admin cannot be deleted.'],
+            ]);
+        }
 
-        $this->repository->delete($user);
+        $files = array_values(array_filter([
+            $user->avatar,
+            ...$this->repository->contentCoverImages($user),
+        ]));
 
-        if ($avatar !== null) {
-            Storage::delete($avatar);
+        DB::transaction(function () use ($user): void {
+            $user->tokens()->delete();
+            $user->notifications()->delete();
+            $this->repository->delete($user);
+        });
+
+        if ($files !== []) {
+            Storage::delete($files);
         }
     }
 }
