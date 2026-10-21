@@ -27,6 +27,13 @@ class FriendRequestRepository implements FriendRequestRepositoryInterface
             ->findOrFail($id);
     }
 
+    public function findForUpdate(int $id): FriendRequest
+    {
+        return FriendRequest::query()
+            ->lockForUpdate()
+            ->findOrFail($id);
+    }
+
     public function findBetween(int $senderId, int $receiverId): ?FriendRequest
     {
         return FriendRequest::query()
@@ -60,19 +67,18 @@ class FriendRequestRepository implements FriendRequestRepositoryInterface
 
     public function paginateFriends(User $user, int $perPage, ?string $cursor): CursorPaginator
     {
-        $friendIds = FriendRequest::query()
+        $sent = FriendRequest::query()
+            ->where('sender_id', $user->id)
             ->where('status', FriendRequestStatus::Accepted)
-            ->where(function (Builder $query) use ($user): void {
-                $query->where('sender_id', $user->id)->orWhere('receiver_id', $user->id);
-            })
-            ->get()
-            ->map(fn (FriendRequest $friendRequest): int => $friendRequest->sender_id === $user->id
-                ? $friendRequest->receiver_id
-                : $friendRequest->sender_id)
-            ->all();
+            ->select('receiver_id as friend_id');
+
+        $received = FriendRequest::query()
+            ->where('receiver_id', $user->id)
+            ->where('status', FriendRequestStatus::Accepted)
+            ->select('sender_id as friend_id');
 
         return User::query()
-            ->whereIn('id', $friendIds)
+            ->whereIn('id', $sent->union($received))
             ->orderBy('name')
             ->orderBy('id')
             ->cursorPaginate($this->clampPerPage($perPage), ['*'], 'cursor', $cursor);

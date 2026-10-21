@@ -22,6 +22,11 @@ interface FriendRequestRepositoryInterface
     public function find(int $id): FriendRequest;
 
     /**
+     * Lock and reload a request for a state transition inside a transaction.
+     */
+    public function findForUpdate(int $id): FriendRequest;
+
+    /**
      * The request between two users, in either direction, if one exists.
      *
      * Cancelled and removed friendships are soft-deleted, so this includes
