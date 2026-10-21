@@ -68,32 +68,44 @@ class FriendRequestService implements FriendRequestServiceInterface
 
     public function accept(User $user, FriendRequest $friendRequest): FriendRequest
     {
-        return $this->respond($friendRequest, FriendRequestStatus::Accepted);
+        return $this->respond($user, $friendRequest, FriendRequestStatus::Accepted);
     }
 
     public function reject(User $user, FriendRequest $friendRequest): FriendRequest
     {
-        return $this->respond($friendRequest, FriendRequestStatus::Rejected);
+        return $this->respond($user, $friendRequest, FriendRequestStatus::Rejected);
     }
 
     public function cancel(User $user, FriendRequest $friendRequest): void
     {
-        $this->repository->delete($friendRequest);
+        DB::transaction(function () use ($user, $friendRequest): void {
+            $locked = $this->repository->findForUpdate($friendRequest->id);
+
+            if ($locked->sender_id !== $user->id || $locked->status !== FriendRequestStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'friend_request' => 'This friend request is no longer pending.',
+                ]);
+            }
+
+            $this->repository->delete($locked);
+        });
     }
 
     public function unfriend(User $user, User $friend): void
     {
-        $friendship = $this->repository->findBetween($user->id, $friend->id);
+        DB::transaction(function () use ($user, $friend): void {
+            $friendship = $this->repository->findBetween($user->id, $friend->id);
 
-        if (! $friendship instanceof FriendRequest
-            || $friendship->trashed()
-            || $friendship->status !== FriendRequestStatus::Accepted) {
-            throw ValidationException::withMessages([
-                'user_id' => 'You are not friends with this user.',
-            ]);
-        }
+            if (! $friendship instanceof FriendRequest
+                || $friendship->trashed()
+                || $friendship->status !== FriendRequestStatus::Accepted) {
+                throw ValidationException::withMessages([
+                    'user_id' => 'You are not friends with this user.',
+                ]);
+            }
 
-        $this->repository->delete($friendship);
+            $this->repository->delete($friendship);
+        });
     }
 
     public function received(User $user, int $perPage, ?string $cursor): CursorPaginator
@@ -114,11 +126,21 @@ class FriendRequestService implements FriendRequestServiceInterface
     /**
      * Record the receiver's decision against a pending request.
      */
-    private function respond(FriendRequest $friendRequest, FriendRequestStatus $status): FriendRequest
+    private function respond(User $user, FriendRequest $friendRequest, FriendRequestStatus $status): FriendRequest
     {
-        return $this->repository->update($friendRequest, [
-            'status' => $status,
-            'responded_at' => now(),
-        ])->load(['sender', 'receiver']);
+        return DB::transaction(function () use ($user, $friendRequest, $status): FriendRequest {
+            $locked = $this->repository->findForUpdate($friendRequest->id);
+
+            if ($locked->receiver_id !== $user->id || $locked->status !== FriendRequestStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'friend_request' => 'This friend request is no longer pending.',
+                ]);
+            }
+
+            return $this->repository->update($locked, [
+                'status' => $status,
+                'responded_at' => now(),
+            ])->load(['sender', 'receiver']);
+        });
     }
 }
