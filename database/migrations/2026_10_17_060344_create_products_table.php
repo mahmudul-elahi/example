@@ -22,11 +22,13 @@ return new class extends Migration
             $table->decimal('compare_at_price', 10, 2)->nullable();
             $table->string('sku')->unique()->nullable();
             $table->integer('stock')->default(0);
-            $table->boolean('in_stock')->default(true);
+            $table->boolean('in_stock')->default(false);
             $table->enum('status', ['draft', 'published', 'out_of_stock'])->default('draft');
             $table->string('cover_image')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['status', 'id']);
         });
     }
 
