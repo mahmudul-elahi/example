@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $compare_at_price
  * @property-read string|null $sku
  * @property-read int $stock
- * @property-read bool $in_stock
+ * @property bool $in_stock
  * @property-read ProductStatus $status
  * @property-read string|null $cover_image
  */
@@ -56,6 +56,13 @@ class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
     use HasFactory, Sluggable, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product): void {
+            $product->in_stock = (int) $product->stock > 0;
+        });
+    }
 
     /**
      * Get the attributes that should be cast.

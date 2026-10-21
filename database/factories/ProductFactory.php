@@ -31,8 +31,7 @@ class ProductFactory extends Factory
             'price' => $price,
             'compare_at_price' => null,
             'sku' => strtoupper(fake()->unique()->bothify('SKU-####-????')),
-            'stock' => fake()->numberBetween(0, 100),
-            'in_stock' => true,
+            'stock' => fake()->numberBetween(1, 100),
             'status' => ProductStatus::Published,
             'cover_image' => null,
         ];
@@ -50,7 +49,6 @@ class ProductFactory extends Factory
         return $this->state(fn (array $attributes): array => [
             'status' => ProductStatus::OutOfStock,
             'stock' => 0,
-            'in_stock' => false,
         ]);
     }
 
