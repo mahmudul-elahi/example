@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('comments')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['commentable_type', 'commentable_id', 'parent_id', 'id']);
         });
     }
 
