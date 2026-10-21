@@ -50,6 +50,23 @@ class UserRepository implements UserRepositoryInterface
         $user->delete();
     }
 
+    /**
+     * The cover images belonging to content the user authored, including
+     * soft-deleted content that a user deletion would remove from the database.
+     *
+     * @return list<string>
+     */
+    public function contentCoverImages(User $user): array
+    {
+        $images = [
+            ...$user->blogPosts()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
+            ...$user->petMemorials()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
+            ...$user->products()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
+        ];
+
+        return array_values(array_unique($images));
+    }
+
     public function loadRoles(User $user): User
     {
         return $user->load('roles');
@@ -64,6 +81,14 @@ class UserRepository implements UserRepositoryInterface
     public function countByRole(Roles $role): int
     {
         return User::query()->role($role->value)->count();
+    }
+
+    public function hasOtherAdmin(User $user): bool
+    {
+        return User::query()
+            ->role(Roles::Admin->value)
+            ->whereKeyNot($user->id)
+            ->exists();
     }
 
     public function countCreatedSince(DateTimeInterface $since): int

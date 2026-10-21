@@ -31,11 +31,18 @@ interface UserRepositoryInterface
 
     public function delete(User $user): void;
 
+    /**
+     * @return list<string>
+     */
+    public function contentCoverImages(User $user): array;
+
     public function loadRoles(User $user): User;
 
     public function updatePassword(User $user, string $password): void;
 
     public function countByRole(Roles $role): int;
+
+    public function hasOtherAdmin(User $user): bool;
 
     public function countCreatedSince(DateTimeInterface $since): int;
 
