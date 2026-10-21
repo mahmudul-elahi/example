@@ -27,6 +27,8 @@ return new class extends Migration
             $table->unsignedBigInteger('views_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['status', 'visibility', 'id']);
         });
     }
 
