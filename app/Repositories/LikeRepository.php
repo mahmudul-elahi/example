@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Models\BlogPost;
 use App\Models\Like;
+use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 
 class LikeRepository implements LikeRepositoryInterface
 {
-    public function create(User $user, Model $likeable): Like
+    public function create(User $user, BlogPost|PetMemorial|Product $likeable): Like
     {
         return $likeable->likes()->firstOrCreate(['user_id' => $user->id]);
     }
 
-    public function delete(User $user, Model $likeable): void
+    public function delete(User $user, BlogPost|PetMemorial|Product $likeable): void
     {
         // Delete through the models so the LikeObserver fires and can
         // invalidate the cached response caches that expose likes_count.
@@ -26,7 +28,7 @@ class LikeRepository implements LikeRepositoryInterface
             ->delete();
     }
 
-    public function count(Model $likeable): int
+    public function count(BlogPost|PetMemorial|Product $likeable): int
     {
         return $likeable->likes()->count();
     }
