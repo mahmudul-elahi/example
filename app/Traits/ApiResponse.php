@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Traits;
 
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpFoundation\Response;
 
 trait ApiResponse
@@ -25,10 +26,10 @@ trait ApiResponse
     }
 
     /**
-     * @param  LengthAwarePaginator<int, mixed>  $paginator
+     * @param  LengthAwarePaginatorContract<int, mixed>  $paginator
      */
     protected function paginated(
-        LengthAwarePaginator $paginator,
+        LengthAwarePaginatorContract $paginator,
         JsonResource $items,
         string $message = 'Success',
         int $code = Response::HTTP_OK
@@ -40,6 +41,9 @@ trait ApiResponse
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
+                'links' => $paginator instanceof LengthAwarePaginator
+                    ? $paginator->linkCollection()->toArray()
+                    : [],
             ],
         ], $message, $code);
     }
