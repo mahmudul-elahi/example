@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\User;
 
+use App\Models\BlogPost;
+use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Traits\ResolvesRouteModel;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
@@ -14,7 +16,7 @@ class DeleteLikeRequest extends FormRequest
 {
     use ResolvesRouteModel;
 
-    private ?Model $resolvedLikeable = null;
+    private BlogPost|PetMemorial|Product|null $resolvedLikeable = null;
 
     public function authorize(): bool
     {
@@ -28,9 +30,9 @@ class DeleteLikeRequest extends FormRequest
      *
      * @throws ModelNotFoundException when the content type is unknown or the model is gone
      */
-    public function likeable(): Model
+    public function likeable(): BlogPost|PetMemorial|Product
     {
-        if ($this->resolvedLikeable instanceof Model) {
+        if ($this->resolvedLikeable !== null) {
             return $this->resolvedLikeable;
         }
 

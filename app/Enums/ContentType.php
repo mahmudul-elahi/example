@@ -7,7 +7,6 @@ namespace App\Enums;
 use App\Models\BlogPost;
 use App\Models\PetMemorial;
 use App\Models\Product;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * The content users can comment on and like, addressed by type in the shared
@@ -22,7 +21,7 @@ enum ContentType: string
     /**
      * The model class behind the type.
      *
-     * @return class-string<Model>
+     * @return class-string<BlogPost|PetMemorial|Product>
      */
     public function modelClass(): string
     {
