@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Models\BlogPost;
 use App\Models\Comment;
+use App\Models\PetMemorial;
+use App\Models\Product;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Database\Eloquent\Model;
 
 class CommentRepository implements CommentRepositoryInterface
 {
     /**
      * @return CursorPaginator<int, Comment>
      */
-    public function cursorPaginateFor(Model $commentable, int $perPage, ?string $cursor = null): CursorPaginator
+    public function cursorPaginateFor(BlogPost|PetMemorial|Product $commentable, int $perPage, ?string $cursor = null): CursorPaginator
     {
         $perPage = min(max($perPage, 1), 100);
 
@@ -41,7 +43,7 @@ class CommentRepository implements CommentRepositoryInterface
     /**
      * @param  array<string, mixed>  $data
      */
-    public function createFor(Model $commentable, array $data): Comment
+    public function createFor(BlogPost|PetMemorial|Product $commentable, array $data): Comment
     {
         return $commentable->comments()->create($data);
     }

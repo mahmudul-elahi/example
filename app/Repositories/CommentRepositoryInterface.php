@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Models\BlogPost;
 use App\Models\Comment;
+use App\Models\PetMemorial;
+use App\Models\Product;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Database\Eloquent\Model;
 
 #[Bind(CommentRepository::class)]
 #[Scoped]
@@ -19,7 +21,7 @@ interface CommentRepositoryInterface
      *
      * @return CursorPaginator<int, Comment>
      */
-    public function cursorPaginateFor(Model $commentable, int $perPage, ?string $cursor = null): CursorPaginator;
+    public function cursorPaginateFor(BlogPost|PetMemorial|Product $commentable, int $perPage, ?string $cursor = null): CursorPaginator;
 
     public function find(int $id): Comment;
 
@@ -28,7 +30,7 @@ interface CommentRepositoryInterface
     /**
      * @param  array<string, mixed>  $data
      */
-    public function createFor(Model $commentable, array $data): Comment;
+    public function createFor(BlogPost|PetMemorial|Product $commentable, array $data): Comment;
 
     /**
      * @param  array<string, mixed>  $data
