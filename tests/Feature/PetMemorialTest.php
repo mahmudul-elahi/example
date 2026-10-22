@@ -41,6 +41,14 @@ it('lists only publicly visible memorials to a guest', function (): void {
         ]);
 });
 
+it('omits the memorial body from the public index', function (): void {
+    PetMemorial::factory()->create();
+
+    $this->getJson('/api/v1/memorials')
+        ->assertOk()
+        ->assertJsonMissingPath('data.items.0.body');
+});
+
 it('filters memorials by search', function (): void {
     PetMemorial::factory()->create(['title' => 'Remembering Rex', 'pet_name' => 'Rex']);
     PetMemorial::factory()->create(['title' => 'Remembering Bella', 'pet_name' => 'Bella']);
@@ -53,14 +61,17 @@ it('filters memorials by search', function (): void {
 
 it('shows a public memorial to a guest and records the view', function (): void {
     $memorial = PetMemorial::factory()->create(['views_count' => 0]);
+    $updatedAt = $memorial->updated_at;
 
     $this->getJson("/api/v1/memorials/{$memorial->slug}")
         ->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.id', $memorial->id)
+        ->assertJsonPath('data.body', $memorial->body)
         ->assertJsonPath('data.views_count', 1);
 
-    expect($memorial->refresh()->views_count)->toBe(1);
+    expect($memorial->refresh()->views_count)->toBe(1)
+        ->and($memorial->updated_at->equalTo($updatedAt))->toBeTrue();
 });
 
 it('forbids a guest from viewing a private memorial', function (): void {

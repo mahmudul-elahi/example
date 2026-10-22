@@ -86,6 +86,6 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
 
     public function incrementViews(PetMemorial $memorial): void
     {
-        $memorial->increment('views_count');
+        PetMemorial::withoutTimestamps(fn () => $memorial->increment('views_count'));
     }
 }
