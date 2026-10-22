@@ -27,6 +27,34 @@ it('seeds content for every model', function (): void {
         ->and(Like::count())->toBeGreaterThan(0);
 });
 
+it('can run twice without duplicating records', function (): void {
+    $this->seed(DatabaseSeeder::class);
+
+    $counts = [
+        'users' => User::count(),
+        'categories' => BlogCategory::count(),
+        'tags' => Tag::count(),
+        'posts' => BlogPost::count(),
+        'products' => Product::count(),
+        'memorials' => PetMemorial::count(),
+        'comments' => Comment::count(),
+        'likes' => Like::count(),
+    ];
+
+    $this->seed(DatabaseSeeder::class);
+
+    expect([
+        'users' => User::count(),
+        'categories' => BlogCategory::count(),
+        'tags' => Tag::count(),
+        'posts' => BlogPost::count(),
+        'products' => Product::count(),
+        'memorials' => PetMemorial::count(),
+        'comments' => Comment::count(),
+        'likes' => Like::count(),
+    ])->toBe($counts);
+});
+
 it('files every post under a category with tags attached', function (): void {
     $this->seed(DatabaseSeeder::class);
 
