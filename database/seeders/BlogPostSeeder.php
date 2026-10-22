@@ -21,6 +21,10 @@ class BlogPostSeeder extends Seeder
      */
     public function run(): void
     {
+        if (BlogPost::query()->exists()) {
+            return;
+        }
+
         $authors = $this->authors();
         $categories = BlogCategory::query()->get();
 

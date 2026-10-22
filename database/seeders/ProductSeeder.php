@@ -19,6 +19,10 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Product::query()->exists()) {
+            return;
+        }
+
         $authors = $this->authors();
 
         $authors->each(function (User $author): void {
