@@ -7,8 +7,10 @@ namespace App\Models;
 use App\Enums\OtpPurpose;
 use Database\Factories\OtpCodeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -22,7 +24,17 @@ use Illuminate\Support\Carbon;
 class OtpCode extends Model
 {
     /** @use HasFactory<OtpCodeFactory> */
-    use HasFactory;
+    use HasFactory, Prunable;
+
+    /**
+     * The expired codes that can be removed by the scheduler.
+     *
+     * @return Builder<static>
+     */
+    public function prunable(): Builder
+    {
+        return static::query()->where('expires_at', '<', now());
+    }
 
     /**
      * Get the attributes that should be cast.
