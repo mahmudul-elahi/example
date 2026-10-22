@@ -31,7 +31,7 @@ class TagSeeder extends Seeder
     public function run(): void
     {
         foreach (self::TAGS as $tag) {
-            Tag::factory()->create(['name' => $tag]);
+            Tag::query()->firstOrCreate(['name' => $tag]);
         }
     }
 }

@@ -32,16 +32,29 @@ class UserSeeder extends Seeder
     }
 
     /**
-     * Create a verified account with the shared password and its single role.
+     * Create a verified account with the shared password and its single role,
+     * keeping an existing account usable when the seeder is rerun.
      */
     private function seedAccount(string $email, string $name, Roles $role): void
     {
-        User::factory()
-            ->withRole($role)
-            ->create([
-                'name' => $name,
-                'email' => $email,
-                'password' => 'password',
-            ]);
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user === null) {
+            User::factory()
+                ->withRole($role)
+                ->create([
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => 'password',
+                ]);
+
+            return;
+        }
+
+        $user->setRole($role);
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
     }
 }

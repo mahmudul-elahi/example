@@ -26,7 +26,10 @@ class BlogCategorySeeder extends Seeder
     public function run(): void
     {
         foreach (self::CATEGORIES as $category) {
-            BlogCategory::factory()->create($category);
+            BlogCategory::query()->updateOrCreate(
+                ['name' => $category['name']],
+                ['description' => $category['description']],
+            );
         }
     }
 }
