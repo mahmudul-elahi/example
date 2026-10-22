@@ -27,18 +27,22 @@ it('lists only published posts to a guest', function (): void {
                 'items' => [
                     '*' => ['id', 'title', 'slug', 'excerpt', 'status', 'published_at'],
                 ],
-                'meta' => ['current_page', 'per_page', 'total', 'last_page'],
+                'meta' => ['current_page', 'per_page', 'total', 'last_page', 'links' => [['url', 'label', 'active']]],
             ],
         ]);
 });
 
 it('shows a published post to a guest and records the view', function (): void {
     $post = BlogPost::factory()->create(['views_count' => 0]);
+    $updatedAt = $post->updated_at;
 
     $this->getJson("/api/v1/blog/{$post->slug}")
         ->assertOk()
         ->assertJsonPath('data.id', $post->id)
+        ->assertJsonPath('data.body', $post->body)
         ->assertJsonPath('data.views_count', 1);
+
+    expect($post->refresh()->updated_at->equalTo($updatedAt))->toBeTrue();
 });
 
 it('forbids a guest from viewing a draft post', function (): void {
@@ -188,6 +192,14 @@ it('does not expose the author email on the public blog', function (): void {
             ],
         ])
         ->assertJsonMissingPath('data.items.0.author.email');
+});
+
+it('omits the post body from the public index', function (): void {
+    BlogPost::factory()->create();
+
+    $this->getJson('/api/v1/blog')
+        ->assertOk()
+        ->assertJsonMissingPath('data.items.0.body');
 });
 
 it('filters the admin post list by status', function (): void {

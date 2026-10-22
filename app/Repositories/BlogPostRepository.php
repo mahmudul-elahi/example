@@ -68,6 +68,6 @@ class BlogPostRepository implements BlogPostRepositoryInterface
 
     public function incrementViews(BlogPost $post): void
     {
-        $post->increment('views_count');
+        BlogPost::withoutTimestamps(fn () => $post->increment('views_count'));
     }
 }
