@@ -54,7 +54,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'Authentication API. Authenticate with the bearer token returned by the login or register endpoints.',
+        'description' => 'REST API for pet memorials, the memorial blog and the shop. Authenticate with the Sanctum bearer token returned by the login or register endpoints.',
     ],
 
     'ui' => [
