@@ -33,6 +33,10 @@ class LikeSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Like::query()->exists()) {
+            return;
+        }
+
         $authors = $this->authors();
 
         foreach ($this->likeables() as $likeable) {

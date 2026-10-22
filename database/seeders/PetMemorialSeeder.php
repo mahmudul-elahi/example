@@ -19,6 +19,10 @@ class PetMemorialSeeder extends Seeder
      */
     public function run(): void
     {
+        if (PetMemorial::query()->exists()) {
+            return;
+        }
+
         $authors = $this->authors();
 
         $authors->each(function (User $author): void {

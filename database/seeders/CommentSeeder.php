@@ -33,6 +33,10 @@ class CommentSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Comment::query()->exists()) {
+            return;
+        }
+
         $authors = $this->authors();
 
         foreach ($this->commentables() as $commentable) {
