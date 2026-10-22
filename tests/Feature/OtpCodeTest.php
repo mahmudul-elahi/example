@@ -25,6 +25,16 @@ it('scopes a code to the user it was issued to', function (): void {
         ->toThrow(ValidationException::class);
 });
 
+it('prunes expired codes but keeps active ones', function (): void {
+    $expired = OtpCode::factory()->expired()->create();
+    $active = OtpCode::factory()->create();
+
+    $this->artisan('model:prune', ['--model' => [OtpCode::class]])->assertSuccessful();
+
+    $this->assertDatabaseMissing('otp_codes', ['id' => $expired->id]);
+    $this->assertDatabaseHas('otp_codes', ['id' => $active->id]);
+});
+
 it("deletes a user's codes when the user is deleted", function (): void {
     $user = User::factory()->create();
     $otp = OtpCode::factory()->for($user)->create();
