@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexProductRequest;
 use App\Http\Requests\Api\V1\Public\ShowProductRequest;
 use App\Http\Resources\V1\ProductResource;
+use App\Http\Resources\V1\ProductSummaryResource;
 use App\Models\Product;
 use App\Services\ProductServiceInterface;
 use App\Traits\ApiResponse;
@@ -30,7 +31,7 @@ class ProductController extends Controller
     {
         $products = $this->products->paginate($request->perPage(), $request->search(), true);
 
-        return $this->paginated($products, ProductResource::collection($products->items()));
+        return $this->paginated($products, ProductSummaryResource::collection($products->items()));
     }
 
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Shop->value])]
