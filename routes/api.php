@@ -11,7 +11,7 @@ Route::prefix('v1')->group([
 ]);
 
 Route::prefix('v1/admin')
-    ->middleware(['auth:sanctum', 'role:admin'])
+    ->middleware(['auth:sanctum', 'verified', 'role:admin'])
     ->group([
         __DIR__.'/v1/admin.php',
     ]);

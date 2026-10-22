@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\Roles;
 use App\Models\User;
 use App\Notifications\Auth\EmailVerificationOtpNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Route;
 
 uses(RefreshDatabase::class);
 
@@ -92,29 +92,33 @@ it('rejects an invalid verification code', function (): void {
         ->assertJsonValidationErrors(['otp' => 'The provided code is invalid or has expired.']);
 });
 
-it('gates protected routes until the email is verified', function (): void {
-    Route::middleware(['auth:sanctum', 'verified'])
-        ->get('/api/v1/_verified', fn (): array => ['ok' => true]);
-
+it('gates protected user routes until the email is verified', function (): void {
     $user = User::factory()->unverified()->create();
 
     $this->actingAs($user, 'sanctum')
-        ->getJson('/api/v1/_verified')
+        ->getJson('/api/v1/friend-requests')
         ->assertForbidden()
         ->assertJsonPath('success', false)
         ->assertJsonPath('message', 'Your email address is not verified.');
 });
 
-it('allows protected routes once the email is verified', function (): void {
-    Route::middleware(['auth:sanctum', 'verified'])
-        ->get('/api/v1/_verified', fn (): array => ['ok' => true]);
-
+it('allows protected user routes once the email is verified', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user, 'sanctum')
-        ->getJson('/api/v1/_verified')
+        ->getJson('/api/v1/friend-requests')
         ->assertOk()
-        ->assertJsonPath('ok', true);
+        ->assertJsonPath('success', true);
+});
+
+it('gates admin routes until the admin email is verified', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->unverified()->create();
+
+    $this->actingAs($admin, 'sanctum')
+        ->getJson('/api/v1/admin/dashboard')
+        ->assertForbidden()
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'Your email address is not verified.');
 });
 
 it('exposes the verification status without blocking the profile', function (): void {

@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\PetMemorialController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::apiResource('memorials', PetMemorialController::class)->except(['index', 'show']);
 
     Route::post('memorials/{memorial}/comments', [CommentController::class, 'storeMemorial']);
