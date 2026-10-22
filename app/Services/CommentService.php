@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\BlogPost;
 use App\Models\Comment;
+use App\Models\PetMemorial;
+use App\Models\Product;
 use App\Models\User;
 use App\Repositories\CommentRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 
 class CommentService implements CommentServiceInterface
@@ -20,7 +22,7 @@ class CommentService implements CommentServiceInterface
     /**
      * @return CursorPaginator<int, Comment>
      */
-    public function cursorPaginate(Model $commentable, int $perPage, ?string $cursor = null): CursorPaginator
+    public function cursorPaginate(BlogPost|PetMemorial|Product $commentable, int $perPage, ?string $cursor = null): CursorPaginator
     {
         return $this->repository->cursorPaginateFor($commentable, $perPage, $cursor);
     }
@@ -33,7 +35,7 @@ class CommentService implements CommentServiceInterface
     /**
      * @param  array<string, mixed>  $data
      */
-    public function create(User $author, Model $commentable, array $data): Comment
+    public function create(User $author, BlogPost|PetMemorial|Product $commentable, array $data): Comment
     {
         $parentId = $data['parent_id'] ?? null;
 
@@ -62,7 +64,7 @@ class CommentService implements CommentServiceInterface
     /**
      * @throws ValidationException
      */
-    private function assertParentBelongsTo(Model $commentable, int $parentId): void
+    private function assertParentBelongsTo(BlogPost|PetMemorial|Product $commentable, int $parentId): void
     {
         $parent = $this->repository->findParent($parentId);
 
