@@ -1,11 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "mahmudul-elahi/example",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Pet memorial, blog and shop API built with Laravel.",
     "keywords": [
         "laravel",
-        "framework"
+        "api",
+        "pet-memorial",
+        "sanctum"
     ],
     "license": "MIT",
     "require": {
@@ -15,12 +17,14 @@
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "predis/predis": "^3.7",
         "spatie/laravel-permission": "^8.0",
         "spatie/laravel-responsecache": "^8.4"
     },
     "require-dev": {
         "driftingly/rector-laravel": "^2.6",
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.13",
         "laravel/boost": "^2.2",
         "laravel/pail": "^1.2.5",
         "laravel/pint": "^1.27",
@@ -47,6 +51,7 @@
         "setup": [
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "npm install --ignore-scripts",
@@ -60,6 +65,7 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "analyse": "phpstan analyse --memory-limit=1G",
         "rector": "rector process",
         "rector:dry": "rector process --dry-run",
         "post-autoload-dump": [
