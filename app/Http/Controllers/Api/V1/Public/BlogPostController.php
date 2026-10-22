@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexBlogPostRequest;
 use App\Http\Requests\Api\V1\Public\ShowBlogPostRequest;
 use App\Http\Resources\V1\BlogPostResource;
+use App\Http\Resources\V1\BlogPostSummaryResource;
 use App\Models\BlogPost;
 use App\Services\BlogPostServiceInterface;
 use App\Traits\ApiResponse;
@@ -31,7 +32,7 @@ class BlogPostController extends Controller
     {
         $posts = $this->posts->paginate($request->perPage(), $request->search(), true);
 
-        return $this->paginated($posts, BlogPostResource::collection($posts->items()));
+        return $this->paginated($posts, BlogPostSummaryResource::collection($posts->items()));
     }
 
     #[NoCache]
