@@ -11,6 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passkeys\Passkeys;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        Passkeys::ignoreRoutes();
     }
 
     /**
