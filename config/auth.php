@@ -127,7 +127,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Per-minute request limits for the public auth endpoints, applied by the
-    | "login" and "register" rate limiters (see AppServiceProvider). Raise the
+    | "login" and "register" rate limiters (see RateLimitServiceProvider). Raise the
     | limits when load/stress testing, e.g. AUTH_LOGIN_RATE_LIMIT=100000.
     |
     */
