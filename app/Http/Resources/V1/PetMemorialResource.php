@@ -22,7 +22,6 @@ class PetMemorialResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'title' => $this->title,
             'slug' => $this->slug,
             'body' => $this->body,
             'pet_name' => $this->pet_name,

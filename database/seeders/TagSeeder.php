@@ -17,12 +17,22 @@ class TagSeeder extends Seeder
         'cats',
         'birds',
         'rabbits',
+        'fish',
         'adoption',
         'grief',
         'memorials',
         'health',
         'training',
         'stories',
+        'senior-pets',
+        'rescue',
+        'nutrition',
+        'behavior',
+        'rainbow-bridge',
+        'pet-loss',
+        'memorial-gifts',
+        'puppies',
+        'kittens',
     ];
 
     /**

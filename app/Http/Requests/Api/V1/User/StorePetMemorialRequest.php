@@ -26,7 +26,6 @@ class StorePetMemorialRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
             'pet_name' => ['required', 'string', 'max:255'],
             'pet_type' => ['sometimes', 'nullable', 'string', Rule::in(PetType::values())],

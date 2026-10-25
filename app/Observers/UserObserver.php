@@ -18,7 +18,7 @@ class UserObserver
      */
     public function updated(User $user): void
     {
-        if ($user->wasChanged(['name', 'avatar'])) {
+        if ($user->wasChanged(['name', 'username', 'avatar'])) {
             $this->invalidate();
         }
     }

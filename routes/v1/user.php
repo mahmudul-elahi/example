@@ -33,6 +33,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::post('friend-requests/{friend_request}/reject', [FriendRequestController::class, 'reject']);
     Route::delete('friend-requests/{friend_request}', [FriendRequestController::class, 'destroy']);
     Route::get('friends', [FriendRequestController::class, 'friends']);
+    Route::get('friends/suggestions', [FriendRequestController::class, 'suggestions']);
     Route::delete('friends/{friend}', [FriendRequestController::class, 'unfriend']);
 
     Route::get('users/blocked', [BlockedUserController::class, 'index']);

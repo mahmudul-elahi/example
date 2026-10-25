@@ -15,6 +15,7 @@ it('sends a verification code on registration', function (): void {
 
     $this->postJson('/api/v1/auth/register', [
         'name' => 'Jane Doe',
+        'username' => 'jane_doe',
         'email' => 'jane@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',

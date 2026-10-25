@@ -28,8 +28,8 @@ it('lists only publicly visible memorials to a guest', function (): void {
                 'items' => [
                     '*' => [
                         'id',
-                        'title',
                         'slug',
+                        'body',
                         'pet_name',
                         'status',
                         'visibility',
@@ -41,17 +41,20 @@ it('lists only publicly visible memorials to a guest', function (): void {
         ]);
 });
 
-it('omits the memorial body from the public index', function (): void {
-    PetMemorial::factory()->create();
+it('includes the memorial body in the public index', function (): void {
+    $memorial = PetMemorial::factory()->create(['body' => 'A gentle soul who loved the beach.']);
 
     $this->getJson('/api/v1/memorials')
         ->assertOk()
-        ->assertJsonMissingPath('data.items.0.body');
+        ->assertJsonPath('data.items.0.body', 'A gentle soul who loved the beach.')
+        ->assertJsonMissingPath('data.items.0.title')
+        ->assertJsonMissingPath('data.items.0.description')
+        ->assertJsonPath('data.items.0.id', $memorial->id);
 });
 
 it('filters memorials by search', function (): void {
-    PetMemorial::factory()->create(['title' => 'Remembering Rex', 'pet_name' => 'Rex']);
-    PetMemorial::factory()->create(['title' => 'Remembering Bella', 'pet_name' => 'Bella']);
+    PetMemorial::factory()->create(['pet_name' => 'Rex']);
+    PetMemorial::factory()->create(['pet_name' => 'Bella']);
 
     $this->getJson('/api/v1/memorials?search=Rex')
         ->assertOk()
@@ -103,7 +106,6 @@ it('creates a memorial for the authenticated user', function (): void {
 
     $this->actingAs($user, 'sanctum')
         ->post('/api/v1/memorials', [
-            'title' => 'Goodbye Bella',
             'body' => 'A loving companion.',
             'pet_name' => 'Bella',
             'pet_type' => 'dog',
@@ -111,18 +113,18 @@ it('creates a memorial for the authenticated user', function (): void {
         ], ['Accept' => 'application/json'])
         ->assertCreated()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.title', 'Goodbye Bella')
-        ->assertJsonPath('data.slug', 'goodbye-bella')
+        ->assertJsonPath('data.body', 'A loving companion.')
+        ->assertJsonPath('data.slug', 'bella')
         ->assertJsonPath('data.pet_type', 'dog')
         ->assertJsonPath('data.status', PostStatus::Published->value)
         ->assertJsonPath('data.visibility', 'public');
 
     $this->assertDatabaseHas('pet_memorials', [
-        'title' => 'Goodbye Bella',
+        'pet_name' => 'Bella',
         'user_id' => $user->id,
     ]);
 
-    $memorial = PetMemorial::query()->where('title', 'Goodbye Bella')->firstOrFail();
+    $memorial = PetMemorial::query()->where('pet_name', 'Bella')->firstOrFail();
     Storage::assertExists($memorial->cover_image);
 });
 
@@ -131,7 +133,7 @@ it('rejects invalid input when creating a memorial', function (): void {
 
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/v1/memorials', [
-            'title' => '',
+            'body' => '',
             'pet_type' => 'dragon',
         ])
         ->assertUnprocessable()
@@ -139,7 +141,7 @@ it('rejects invalid input when creating a memorial', function (): void {
         ->assertJsonStructure([
             'success',
             'message',
-            'errors' => ['title', 'body', 'pet_name', 'pet_type'],
+            'errors' => ['body', 'pet_name', 'pet_type'],
         ]);
 });
 
@@ -149,16 +151,16 @@ it('lets the owner update their memorial', function (): void {
 
     $this->actingAs($owner, 'sanctum')
         ->putJson("/api/v1/memorials/{$memorial->slug}", [
-            'title' => 'Updated Title',
+            'body' => 'Updated body.',
             'visibility' => 'private',
         ])
         ->assertOk()
-        ->assertJsonPath('data.title', 'Updated Title')
+        ->assertJsonPath('data.body', 'Updated body.')
         ->assertJsonPath('data.visibility', 'private');
 
     $this->assertDatabaseHas('pet_memorials', [
         'id' => $memorial->id,
-        'title' => 'Updated Title',
+        'body' => 'Updated body.',
     ]);
 });
 
@@ -168,7 +170,7 @@ it('forbids another user from updating a memorial', function (): void {
     $memorial = PetMemorial::factory()->forUser($owner)->create();
 
     $this->actingAs($other, 'sanctum')
-        ->putJson("/api/v1/memorials/{$memorial->slug}", ['title' => 'Hijacked'])
+        ->putJson("/api/v1/memorials/{$memorial->slug}", ['body' => 'Hijacked'])
         ->assertForbidden();
 });
 
@@ -177,9 +179,9 @@ it('lets an admin update any memorial', function (): void {
     $memorial = PetMemorial::factory()->create();
 
     $this->actingAs($admin, 'sanctum')
-        ->putJson("/api/v1/memorials/{$memorial->slug}", ['title' => 'Moderated'])
+        ->putJson("/api/v1/memorials/{$memorial->slug}", ['body' => 'Moderated'])
         ->assertOk()
-        ->assertJsonPath('data.title', 'Moderated');
+        ->assertJsonPath('data.body', 'Moderated');
 });
 
 it('lets the owner delete their memorial', function (): void {
@@ -227,7 +229,6 @@ it('rejects a pet passed date before the pet born date', function (): void {
 
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/v1/memorials', [
-            'title' => 'Goodbye Rex',
             'body' => 'A loving companion.',
             'pet_name' => 'Rex',
             'pet_born_at' => '2020-01-01',

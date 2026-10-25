@@ -396,3 +396,92 @@ it('rejects sending a friend request if either user has blocked the other', func
         ->assertUnprocessable()
         ->assertJsonValidationErrors('user_id');
 });
+
+it('requires authentication to list friend suggestions', function (): void {
+    $this->getJson('/api/v1/friends/suggestions')
+        ->assertUnauthorized();
+});
+
+it('suggests only verified users without a friendship or pending request', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    $friend = User::factory()->withRole(Roles::User)->create();
+    $incomingPending = User::factory()->withRole(Roles::User)->create();
+    $outgoingPending = User::factory()->withRole(Roles::User)->create();
+    $removedFriend = User::factory()->withRole(Roles::User)->create();
+    $rejected = User::factory()->withRole(Roles::User)->create();
+    $unverified = User::factory()->withRole(Roles::User)->unverified()->create();
+    $stranger = User::factory()->withRole(Roles::User)->create();
+
+    FriendRequest::factory()->from($me)->to($friend)->accepted()->create();
+    FriendRequest::factory()->from($incomingPending)->to($me)->create();
+    FriendRequest::factory()->from($me)->to($outgoingPending)->create();
+    FriendRequest::factory()->from($me)->to($removedFriend)->accepted()->create()->delete();
+    FriendRequest::factory()->from($me)->to($rejected)->rejected()->create();
+
+    $response = $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends/suggestions')
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $ids = collect($response->json('data.items'))->pluck('id')->all();
+
+    expect($ids)
+        ->toContain($removedFriend->id)
+        ->toContain($rejected->id)
+        ->toContain($stranger->id)
+        ->not->toContain($me->id)
+        ->not->toContain($friend->id)
+        ->not->toContain($incomingPending->id)
+        ->not->toContain($outgoingPending->id)
+        ->not->toContain($unverified->id);
+});
+
+it('ranks friend suggestions by mutual friends', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    $myFriend = User::factory()->withRole(Roles::User)->create();
+    $mutual = User::factory()->withRole(Roles::User)->create(['name' => 'Has Mutual']);
+    $stranger = User::factory()->withRole(Roles::User)->create(['name' => 'No Mutual']);
+
+    FriendRequest::factory()->from($me)->to($myFriend)->accepted()->create();
+    FriendRequest::factory()->from($myFriend)->to($mutual)->accepted()->create();
+
+    $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends/suggestions')
+        ->assertOk()
+        ->assertJsonPath('data.items.0.id', $mutual->id)
+        ->assertJsonPath('data.items.0.mutual_friends_count', 1)
+        ->assertJsonPath('data.items.1.id', $stranger->id)
+        ->assertJsonPath('data.items.1.mutual_friends_count', 0);
+});
+
+it('paginates friend suggestions with the standard envelope', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    User::factory()->withRole(Roles::User)->count(3)->create();
+
+    $firstPage = $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends/suggestions?per_page=1')
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.meta.per_page', 1)
+        ->assertJsonPath('data.meta.current_page', 1)
+        ->assertJsonPath('data.meta.total', 3)
+        ->assertJsonCount(1, 'data.items')
+        ->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                'items' => [
+                    '*' => ['id', 'name', 'username', 'avatar', 'mutual_friends_count'],
+                ],
+                'meta' => ['current_page', 'per_page', 'total', 'last_page', 'links'],
+            ],
+        ]);
+
+    $secondPage = $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends/suggestions?per_page=1&page=2')
+        ->assertOk()
+        ->assertJsonPath('data.meta.current_page', 2)
+        ->assertJsonCount(1, 'data.items');
+
+    expect($secondPage->json('data.items.0.id'))->not->toBe($firstPage->json('data.items.0.id'));
+});

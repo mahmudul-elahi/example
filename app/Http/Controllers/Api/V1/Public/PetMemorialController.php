@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexPetMemorialRequest;
 use App\Http\Requests\Api\V1\Public\ShowPetMemorialRequest;
 use App\Http\Resources\V1\PetMemorialResource;
-use App\Http\Resources\V1\PetMemorialSummaryResource;
 use App\Models\PetMemorial;
 use App\Services\PetMemorialServiceInterface;
 use App\Traits\ApiResponse;
@@ -32,7 +31,7 @@ class PetMemorialController extends Controller
     {
         $memorials = $this->memorials->cursorPaginate($request->perPage(), $request->search(), true, $request->cursor());
 
-        return $this->cursorPaginated($memorials, PetMemorialSummaryResource::collection($memorials->items()));
+        return $this->cursorPaginated($memorials, PetMemorialResource::collection($memorials->items()));
     }
 
     #[NoCache]

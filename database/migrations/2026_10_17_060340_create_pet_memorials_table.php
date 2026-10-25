@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('pet_memorials', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('title');
             $table->string('slug')->unique();
             $table->longText('body');
             $table->string('pet_name');

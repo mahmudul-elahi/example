@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 #[Bind(FriendRequestRepository::class)]
 #[Scoped]
@@ -52,6 +53,14 @@ interface FriendRequestRepositoryInterface
      * @return CursorPaginator<int, User>
      */
     public function paginateFriends(User $user, int $perPage, ?string $cursor): CursorPaginator;
+
+    /**
+     * Verified users the given user has no friendship or pending request with,
+     * ranked by the number of friends both users share.
+     *
+     * @return LengthAwarePaginator<int, User>
+     */
+    public function paginateSuggestions(User $user, int $perPage): LengthAwarePaginator;
 
     /**
      * @param  array<string, mixed>  $data

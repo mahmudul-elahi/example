@@ -29,7 +29,6 @@ class UpdatePetMemorialRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'string', 'max:255'],
             'body' => ['sometimes', 'string'],
             'pet_name' => ['sometimes', 'string', 'max:255'],
             'pet_type' => ['sometimes', 'nullable', 'string', Rule::in(PetType::values())],

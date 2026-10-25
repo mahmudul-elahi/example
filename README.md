@@ -41,7 +41,7 @@ The public read endpoints require a running Redis server at the address configur
 All demo accounts use the password `password`:
 
 - `admin@example.com` — administrator
-- `user1@example.com` through `user10@example.com` — regular users
+- `user1@example.com` through `user24@example.com` — regular users
 
 ## API documentation
 

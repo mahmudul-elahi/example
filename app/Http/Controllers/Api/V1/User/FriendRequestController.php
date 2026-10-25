@@ -7,10 +7,12 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\DeleteFriendRequestRequest;
 use App\Http\Requests\Api\V1\User\IndexFriendRequestRequest;
+use App\Http\Requests\Api\V1\User\IndexFriendSuggestionRequest;
 use App\Http\Requests\Api\V1\User\RespondFriendRequestRequest;
 use App\Http\Requests\Api\V1\User\StoreFriendRequestRequest;
 use App\Http\Resources\V1\AuthorResource;
 use App\Http\Resources\V1\FriendRequestResource;
+use App\Http\Resources\V1\FriendSuggestionResource;
 use App\Models\FriendRequest;
 use App\Models\User;
 use App\Services\FriendRequestServiceInterface;
@@ -21,7 +23,8 @@ use Illuminate\Http\JsonResponse;
 
 /**
  * The friend request lifecycle: send, list received, accept, reject, cancel,
- * list friends and unfriend. Accepted requests become friendships.
+ * list friends, list suggestions and unfriend. Accepted requests become
+ * friendships.
  */
 #[Group('User - Friends', weight: 90)]
 class FriendRequestController extends Controller
@@ -77,6 +80,17 @@ class FriendRequestController extends Controller
         $friends = $this->friendRequests->friends($user, $request->perPage(), $request->cursor());
 
         return $this->cursorPaginated($friends, AuthorResource::collection($friends->items()), 'Friends');
+    }
+
+    public function suggestions(IndexFriendSuggestionRequest $request, #[CurrentUser] User $user): JsonResponse
+    {
+        $suggestions = $this->friendRequests->suggestions($user, $request->perPage());
+
+        return $this->paginated(
+            $suggestions,
+            FriendSuggestionResource::collection($suggestions->items()),
+            'Friend suggestions'
+        );
     }
 
     public function unfriend(User $friend, #[CurrentUser] User $user): JsonResponse

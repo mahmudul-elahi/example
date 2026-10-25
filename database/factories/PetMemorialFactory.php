@@ -27,7 +27,6 @@ class PetMemorialFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'title' => 'In loving memory of '.fake()->firstName(),
             'body' => fake()->paragraphs(3, true),
             'pet_name' => fake()->firstName(),
             'pet_type' => fake()->randomElement(PetType::cases()),

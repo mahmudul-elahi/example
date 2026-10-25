@@ -10,33 +10,37 @@ uses(RefreshDatabase::class);
 it('registers a user with the default role and returns a token', function (): void {
     $this->postJson('/api/v1/auth/register', [
         'name' => 'Jane Doe',
+        'username' => 'jane_doe',
         'email' => 'jane@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
     ])
         ->assertCreated()
         ->assertJsonPath('success', true)
+        ->assertJsonPath('data.user.username', 'jane_doe')
         ->assertJsonPath('data.user.email', 'jane@example.com')
         ->assertJsonPath('data.user.role', 'user')
         ->assertJsonStructure([
             'success',
             'message',
             'data' => [
-                'user' => ['id', 'name', 'email', 'role'],
+                'user' => ['id', 'name', 'username', 'email', 'role'],
                 'token',
             ],
         ]);
 
     $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
 
-    expect($user->role)->toBe('user');
+    expect($user->username)->toBe('jane_doe')
+        ->and($user->role)->toBe('user');
 });
 
 it('rejects registration with invalid data using the error envelope', function (): void {
     $this->postJson('/api/v1/auth/register', [])
         ->assertUnprocessable()
         ->assertJsonPath('success', false)
-        ->assertJsonStructure(['success', 'message', 'errors']);
+        ->assertJsonStructure(['success', 'message', 'errors'])
+        ->assertJsonValidationErrors(['name', 'username', 'email', 'password']);
 });
 
 it('rejects registration with a duplicate email', function (): void {
@@ -44,6 +48,7 @@ it('rejects registration with a duplicate email', function (): void {
 
     $this->postJson('/api/v1/auth/register', [
         'name' => 'Jane Doe',
+        'username' => 'jane_doe',
         'email' => 'jane@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
@@ -52,6 +57,38 @@ it('rejects registration with a duplicate email', function (): void {
         ->assertJsonPath('success', false)
         ->assertJsonValidationErrors('email');
 });
+
+it('rejects registration with a duplicate username', function (): void {
+    User::factory()->create(['username' => 'jane_doe']);
+
+    $this->postJson('/api/v1/auth/register', [
+        'name' => 'Jane Doe',
+        'username' => 'jane_doe',
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors('username');
+});
+
+it('rejects registration with an invalid username', function (string $username): void {
+    $this->postJson('/api/v1/auth/register', [
+        'name' => 'Jane Doe',
+        'username' => $username,
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors('username');
+})->with([
+    'too short' => 'jd',
+    'contains spaces' => 'jane doe',
+    'contains symbols' => 'jane@doe',
+]);
 
 it('logs in with valid credentials', function (): void {
     User::factory()->create([
