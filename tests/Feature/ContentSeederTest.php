@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\FriendRequestStatus;
+use App\Enums\StoryMediaType;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\Comment;
@@ -10,6 +11,7 @@ use App\Models\FriendRequest;
 use App\Models\Like;
 use App\Models\PetMemorial;
 use App\Models\Product;
+use App\Models\Story;
 use App\Models\Tag;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -26,7 +28,8 @@ it('seeds content for every model', function (): void {
         ->and(Product::count())->toBeGreaterThan(0)
         ->and(PetMemorial::count())->toBeGreaterThan(0)
         ->and(Comment::count())->toBeGreaterThan(0)
-        ->and(Like::count())->toBeGreaterThan(0);
+        ->and(Like::count())->toBeGreaterThan(0)
+        ->and(Story::count())->toBeGreaterThan(0);
 });
 
 it('can run twice without duplicating records', function (): void {
@@ -42,6 +45,7 @@ it('can run twice without duplicating records', function (): void {
         'comments' => Comment::count(),
         'likes' => Like::count(),
         'friend_requests' => FriendRequest::withTrashed()->count(),
+        'stories' => Story::count(),
     ];
 
     $this->seed(DatabaseSeeder::class);
@@ -56,6 +60,7 @@ it('can run twice without duplicating records', function (): void {
         'comments' => Comment::count(),
         'likes' => Like::count(),
         'friend_requests' => FriendRequest::withTrashed()->count(),
+        'stories' => Story::count(),
     ])->toBe($counts);
 });
 
@@ -93,10 +98,19 @@ it('seeds a connected friend network with pending and rejected requests', functi
         ->and(FriendRequest::query()->where('status', FriendRequestStatus::Accepted)->distinct()->count('sender_id'))->toBeGreaterThan(1);
 });
 
+it('seeds active and expired stories with images and videos', function (): void {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(Story::query()->where('expires_at', '>', now())->exists())->toBeTrue()
+        ->and(Story::query()->where('expires_at', '<=', now())->exists())->toBeTrue()
+        ->and(Story::query()->where('media_type', StoryMediaType::Image)->exists())->toBeTrue()
+        ->and(Story::query()->where('media_type', StoryMediaType::Video)->exists())->toBeTrue();
+});
+
 it('leaves the admin account without any content', function (): void {
     $this->seed(DatabaseSeeder::class);
 
     $admin = User::query()->where('email', 'admin@example.com')->sole();
 
-    expect($admin->blogPosts()->count() + $admin->products()->count() + $admin->petMemorials()->count())->toBe(0);
+    expect($admin->blogPosts()->count() + $admin->products()->count() + $admin->petMemorials()->count() + $admin->stories()->count())->toBe(0);
 });

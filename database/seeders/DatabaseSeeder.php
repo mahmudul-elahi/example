@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             CommentSeeder::class,
             LikeSeeder::class,
             FriendRequestSeeder::class,
+            StorySeeder::class,
         ]);
     }
 }

@@ -29,4 +29,34 @@ class StoryFactory extends Factory
             'expires_at' => now()->addDay(),
         ];
     }
+
+    public function forUser(User $user): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function image(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'media_type' => StoryMediaType::Image,
+            'media_path' => 'stories/'.fake()->uuid().'.jpg',
+        ]);
+    }
+
+    public function video(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'media_type' => StoryMediaType::Video,
+            'media_path' => 'stories/'.fake()->uuid().'.mp4',
+        ]);
+    }
+
+    public function expired(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'expires_at' => now()->subHours(fake()->numberBetween(1, 24)),
+        ]);
+    }
 }
