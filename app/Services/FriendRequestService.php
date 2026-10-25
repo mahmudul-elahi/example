@@ -9,6 +9,7 @@ use App\Models\FriendRequest;
 use App\Models\User;
 use App\Repositories\FriendRequestRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -121,6 +122,11 @@ class FriendRequestService implements FriendRequestServiceInterface
     public function friends(User $user, int $perPage, ?string $cursor): CursorPaginator
     {
         return $this->repository->paginateFriends($user, $perPage, $cursor);
+    }
+
+    public function suggestions(User $user, int $perPage): LengthAwarePaginator
+    {
+        return $this->repository->paginateSuggestions($user, $perPage);
     }
 
     /**
