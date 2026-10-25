@@ -46,6 +46,7 @@ it('orders the tags by their configured weight', function (): void {
             'User - Blocks',
             'User - Friends',
             'User - Notifications',
+            'User - Stories',
             'Admin - User',
             'Admin - Dashboard',
             'Admin - Blog',
@@ -151,6 +152,16 @@ it('documents the notification endpoints under the User - Notifications tag', fu
         ->and($response->json('paths./v1/notifications/{notification}/read.post.tags'))->toBe(['User - Notifications'])
         ->and($response->json('paths./v1/notifications.get.responses.200.content.application/json.schema.properties.data.properties.items.items.$ref'))
         ->toBe('#/components/schemas/NotificationResource');
+});
+
+it('documents story feed and management endpoints under the User - Stories tag', function (): void {
+    $response = $this->getJson('/docs/api.json')->assertOk();
+
+    expect($response->json('paths./v1/stories.get.tags'))->toBe(['User - Stories'])
+        ->and($response->json('paths./v1/stories.post.tags'))->toBe(['User - Stories'])
+        ->and($response->json('paths./v1/stories/mine.get.tags'))->toBe(['User - Stories'])
+        ->and($response->json('paths./v1/stories/{story}.delete.tags'))->toBe(['User - Stories'])
+        ->and($response->json('paths./v1/stories/{story}/media.get.tags'))->toBe(['User - Stories']);
 });
 
 it('documents conversation, message, and block endpoints under their tags', function (): void {

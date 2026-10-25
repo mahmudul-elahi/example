@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\User\LikeController;
 use App\Http\Controllers\Api\V1\User\MessageController;
 use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\PetMemorialController;
+use App\Http\Controllers\Api\V1\User\StoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
@@ -35,6 +36,12 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::get('friends', [FriendRequestController::class, 'friends']);
     Route::get('friends/suggestions', [FriendRequestController::class, 'suggestions']);
     Route::delete('friends/{friend}', [FriendRequestController::class, 'unfriend']);
+
+    Route::get('stories', [StoryController::class, 'index']);
+    Route::get('stories/mine', [StoryController::class, 'mine']);
+    Route::post('stories', [StoryController::class, 'store']);
+    Route::get('stories/{story}/media', [StoryController::class, 'media']);
+    Route::delete('stories/{story}', [StoryController::class, 'destroy']);
 
     Route::get('users/blocked', [BlockedUserController::class, 'index']);
     Route::post('users/{user}/block', [BlockedUserController::class, 'block']);

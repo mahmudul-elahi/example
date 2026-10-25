@@ -192,4 +192,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(ConversationParticipant::class);
     }
+
+    /**
+     * Stories shared by the user.
+     *
+     * @return HasMany<Story, $this>
+     */
+    public function stories(): HasMany
+    {
+        return $this->hasMany(Story::class);
+    }
 }
