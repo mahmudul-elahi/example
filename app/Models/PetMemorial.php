@@ -27,7 +27,6 @@ use Illuminate\Support\Facades\Storage;
 /**
  * @property-read int $id
  * @property-read int $user_id
- * @property-read string $title
  * @property-read string $slug
  * @property-read string $body
  * @property-read string $pet_name
@@ -41,7 +40,6 @@ use Illuminate\Support\Facades\Storage;
  */
 #[Fillable([
     'user_id',
-    'title',
     'slug',
     'body',
     'pet_name',
@@ -86,7 +84,7 @@ class PetMemorial extends Model
     {
         return [
             'slug' => [
-                'source' => 'title',
+                'source' => 'pet_name',
             ],
         ];
     }

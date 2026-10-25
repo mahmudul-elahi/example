@@ -24,8 +24,8 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
             ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
             ->when($search, function (Builder $query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {
-                    $q->where('title', 'like', "%{$search}%")
-                        ->orWhere('pet_name', 'like', "%{$search}%");
+                    $q->where('pet_name', 'like', "%{$search}%")
+                        ->orWhere('body', 'like', "%{$search}%");
                 });
             })
             ->latest('id')
@@ -45,8 +45,8 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
             ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
             ->when($search, function (Builder $query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {
-                    $q->where('title', 'like', "%{$search}%")
-                        ->orWhere('pet_name', 'like', "%{$search}%");
+                    $q->where('pet_name', 'like', "%{$search}%")
+                        ->orWhere('body', 'like', "%{$search}%");
                 });
             })
             ->latest('id')

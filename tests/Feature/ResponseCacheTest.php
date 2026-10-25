@@ -245,7 +245,8 @@ it('does not cache the blog show route so every visit records a view', function 
 });
 
 it('invalidates cached pagination and search variants of a cached index', function (): void {
-    PetMemorial::factory()->create(['title' => 'Findable Memorial']);
+    PetMemorial::factory()->create(['pet_name' => 'Findable']);
+    PetMemorial::factory()->create(['body' => 'Nothing matching here.']);
 
     $this->getJson('/api/v1/memorials?search=Findable')
         ->assertOk()
@@ -258,7 +259,7 @@ it('invalidates cached pagination and search variants of a cached index', functi
         ->assertJsonPath('data.meta.per_page', 15);
 
     // Creating a matching memorial invalidates the search variant too
-    PetMemorial::factory()->create(['title' => 'Another Findable Memorial']);
+    PetMemorial::factory()->create(['pet_name' => 'Another Findable']);
 
     $this->getJson('/api/v1/memorials?search=Findable')
         ->assertOk()
