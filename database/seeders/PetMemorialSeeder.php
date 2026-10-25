@@ -14,8 +14,23 @@ class PetMemorialSeeder extends Seeder
     use HasSeedAuthors;
 
     /**
-     * Seed two published memorials per author plus a few drafts and private
-     * memorials, which the public index filters out.
+     * How many published memorials each author gets.
+     */
+    private const int MEMORIALS_PER_AUTHOR = 3;
+
+    /**
+     * Extra drafts that the public memorial index filters out.
+     */
+    private const int DRAFT_MEMORIALS = 8;
+
+    /**
+     * Extra private memorials owned by a single user.
+     */
+    private const int PRIVATE_MEMORIALS = 6;
+
+    /**
+     * Seed published memorials per author plus drafts and private memorials,
+     * which the public index filters out.
      */
     public function run(): void
     {
@@ -27,21 +42,21 @@ class PetMemorialSeeder extends Seeder
 
         $authors->each(function (User $author): void {
             PetMemorial::factory()
-                ->count(2)
+                ->count(self::MEMORIALS_PER_AUTHOR)
                 ->forUser($author)
-                ->create();
+                ->create(['views_count' => fake()->numberBetween(10, 3000)]);
         });
 
         PetMemorial::factory()
-            ->count(3)
+            ->count(self::DRAFT_MEMORIALS)
             ->draft()
             ->forUser($authors->random())
             ->create();
 
         PetMemorial::factory()
-            ->count(2)
+            ->count(self::PRIVATE_MEMORIALS)
             ->private()
             ->forUser($authors->random())
-            ->create();
+            ->create(['views_count' => fake()->numberBetween(0, 50)]);
     }
 }

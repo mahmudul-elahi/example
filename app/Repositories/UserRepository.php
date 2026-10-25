@@ -105,6 +105,7 @@ class UserRepository implements UserRepositoryInterface
             ->when($search, function ($query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {
                     $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })

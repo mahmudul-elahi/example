@@ -19,17 +19,22 @@ class CommentSeeder extends Seeder
     /**
      * How many listed models of each commentable type get a seeded thread.
      */
-    private const int COMMENTABLE_COUNT = 5;
+    private const int COMMENTABLE_COUNT = 10;
 
     /**
      * How many top-level comments each thread starts with.
      */
-    private const int COMMENTS_PER_MODEL = 2;
+    private const int COMMENTS_PER_MODEL = 3;
+
+    /**
+     * How many replies each top-level comment gets.
+     */
+    private const int REPLIES_PER_COMMENT = 2;
 
     /**
      * Seed comment threads on blog posts, memorials and products — the models
-     * that expose a comments count in their API responses — including one
-     * reply per comment.
+     * that expose a comments count in their API responses — including replies
+     * to every top-level comment.
      */
     public function run(): void
     {
@@ -48,6 +53,7 @@ class CommentSeeder extends Seeder
 
             $comments->each(function (Comment $comment) use ($authors, $commentable): void {
                 Comment::factory()
+                    ->count(self::REPLIES_PER_COMMENT)
                     ->replyTo($comment)
                     ->forCommentable($commentable)
                     ->forUser($authors->random())
@@ -57,7 +63,7 @@ class CommentSeeder extends Seeder
     }
 
     /**
-     * The first few publicly listed models of every commentable type.
+     * The listed models of every commentable type that get seeded threads.
      *
      * The lists are flattened into one array instead of merged: merging
      * Eloquent collections keys them by primary key, so models of different

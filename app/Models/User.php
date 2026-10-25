@@ -27,7 +27,7 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property-read string|null $role
  */
-#[Fillable(['name', 'email', 'password', 'avatar'])]
+#[Fillable(['name', 'username', 'email', 'password', 'avatar'])]
 #[Hidden(['password', 'remember_token'])]
 #[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser

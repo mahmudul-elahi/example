@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\FriendRequestStatus;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\Comment;
+use App\Models\FriendRequest;
 use App\Models\Like;
 use App\Models\PetMemorial;
 use App\Models\Product;
@@ -39,6 +41,7 @@ it('can run twice without duplicating records', function (): void {
         'memorials' => PetMemorial::count(),
         'comments' => Comment::count(),
         'likes' => Like::count(),
+        'friend_requests' => FriendRequest::withTrashed()->count(),
     ];
 
     $this->seed(DatabaseSeeder::class);
@@ -52,6 +55,7 @@ it('can run twice without duplicating records', function (): void {
         'memorials' => PetMemorial::count(),
         'comments' => Comment::count(),
         'likes' => Like::count(),
+        'friend_requests' => FriendRequest::withTrashed()->count(),
     ])->toBe($counts);
 });
 
@@ -78,6 +82,15 @@ it('seeds comment threads with replies and likes on the listed content', functio
         ->and(Comment::query()->whereNotNull('parent_id')->exists())->toBeTrue()
         ->and(BlogPost::query()->has('comments')->exists())->toBeTrue()
         ->and(PetMemorial::query()->has('likes')->exists())->toBeTrue();
+});
+
+it('seeds a connected friend network with pending and rejected requests', function (): void {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(FriendRequest::query()->where('status', FriendRequestStatus::Accepted)->exists())->toBeTrue()
+        ->and(FriendRequest::query()->where('status', FriendRequestStatus::Pending)->exists())->toBeTrue()
+        ->and(FriendRequest::query()->where('status', FriendRequestStatus::Rejected)->exists())->toBeTrue()
+        ->and(FriendRequest::query()->where('status', FriendRequestStatus::Accepted)->distinct()->count('sender_id'))->toBeGreaterThan(1);
 });
 
 it('leaves the admin account without any content', function (): void {

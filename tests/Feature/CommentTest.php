@@ -440,7 +440,7 @@ it('does not expose the comment author email to a guest', function (): void {
         ->assertJsonStructure([
             'data' => [
                 'items' => [
-                    '*' => ['author' => ['id', 'name', 'avatar']],
+                    '*' => ['author' => ['id', 'name', 'username', 'avatar']],
                 ],
             ],
         ])

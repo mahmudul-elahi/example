@@ -187,7 +187,7 @@ it('does not expose the author email on the public blog', function (): void {
         ->assertJsonStructure([
             'data' => [
                 'items' => [
-                    '*' => ['author' => ['id', 'name', 'avatar']],
+                    '*' => ['author' => ['id', 'name', 'username', 'avatar']],
                 ],
             ],
         ])

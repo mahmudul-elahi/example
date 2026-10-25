@@ -20,12 +20,12 @@ class LikeSeeder extends Seeder
     /**
      * How many listed models of each likeable type get seeded likes.
      */
-    private const int LIKEABLE_COUNT = 5;
+    private const int LIKEABLE_COUNT = 15;
 
     /**
      * How many distinct users like each of those models.
      */
-    private const int LIKES_PER_MODEL = 3;
+    private const int LIKES_PER_MODEL = 5;
 
     /**
      * Seed likes on blog posts, memorials and products — the models that
@@ -50,7 +50,7 @@ class LikeSeeder extends Seeder
     }
 
     /**
-     * The first few publicly listed models of every likeable type.
+     * The listed models of every likeable type that get seeded likes.
      *
      * The lists are flattened into one array instead of merged: merging
      * Eloquent collections keys them by primary key, so models of different

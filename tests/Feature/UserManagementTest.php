@@ -32,6 +32,7 @@ it('lists users with pagination for an admin', function (): void {
                     '*' => [
                         'id',
                         'name',
+                        'username',
                         'email',
                         'avatar',
                         'role',
@@ -55,10 +56,12 @@ it('filters users by search and role', function (): void {
     $admin = User::factory()->withRole(Roles::Admin)->create();
     $target = User::factory()->withRole(Roles::User)->create([
         'name' => 'Alice Special',
+        'username' => 'alice_special',
         'email' => 'alice@special.test',
     ]);
     User::factory()->withRole(Roles::User)->create([
         'name' => 'Bob Regular',
+        'username' => 'bob_regular',
         'email' => 'bob@regular.test',
     ]);
 
@@ -68,7 +71,20 @@ it('filters users by search and role', function (): void {
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.meta.total', 1)
         ->assertJsonPath('data.items.0.id', $target->id)
-        ->assertJsonPath('data.items.0.name', 'Alice Special');
+        ->assertJsonPath('data.items.0.name', 'Alice Special')
+        ->assertJsonPath('data.items.0.username', 'alice_special');
+});
+
+it('searches users by username', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $target = User::factory()->withRole(Roles::User)->create(['username' => 'needle_user']);
+    User::factory()->withRole(Roles::User)->create(['username' => 'other_user']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->getJson('/api/v1/admin/users?search=needle')
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 1)
+        ->assertJsonPath('data.items.0.id', $target->id);
 });
 
 it('validates per_page query limits', function (): void {
@@ -100,6 +116,7 @@ it('shows a single user', function (): void {
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.id', $user->id)
         ->assertJsonPath('data.name', $user->name)
+        ->assertJsonPath('data.username', $user->username)
         ->assertJsonPath('data.email', $user->email)
         ->assertJsonPath('data.role', 'user');
 });
@@ -132,6 +149,7 @@ it('stores an uploaded avatar when creating a user', function (): void {
     $response = $this->actingAs($admin, 'sanctum')
         ->post('/api/v1/admin/users', [
             'name' => 'Avatar User',
+            'username' => 'avatar_user',
             'email' => 'avatar@example.test',
             'password' => 'password',
             'role' => 'user',
@@ -206,6 +224,7 @@ it('rejects an avatar that is not an image', function (): void {
     $this->actingAs($admin, 'sanctum')
         ->post('/api/v1/admin/users', [
             'name' => 'Bad Avatar',
+            'username' => 'bad_avatar',
             'email' => 'bad-avatar@example.test',
             'password' => 'password',
             'role' => 'user',
@@ -228,6 +247,7 @@ it('creates a user with a role', function (): void {
     $this->actingAs($admin, 'sanctum')
         ->postJson('/api/v1/admin/users', [
             'name' => 'Charlie New',
+            'username' => 'charlie_new',
             'email' => 'charlie@new.test',
             'password' => 'secret1234',
             'role' => 'admin',
@@ -235,11 +255,28 @@ it('creates a user with a role', function (): void {
         ->assertCreated()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.name', 'Charlie New')
+        ->assertJsonPath('data.username', 'charlie_new')
         ->assertJsonPath('data.email', 'charlie@new.test')
         ->assertJsonPath('data.role', 'admin')
         ->assertJsonPath('data.email_verified', true);
 
-    $this->assertDatabaseHas('users', ['email' => 'charlie@new.test']);
+    $this->assertDatabaseHas('users', ['email' => 'charlie@new.test', 'username' => 'charlie_new']);
+});
+
+it('rejects a duplicate username when creating a user', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    User::factory()->withRole(Roles::User)->create(['username' => 'taken_name']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->postJson('/api/v1/admin/users', [
+            'name' => 'Taken Name',
+            'username' => 'taken_name',
+            'email' => 'taken@new.test',
+            'password' => 'secret1234',
+            'role' => 'user',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('username');
 });
 
 it('rejects invalid input when creating a user', function (): void {
@@ -248,6 +285,7 @@ it('rejects invalid input when creating a user', function (): void {
     $this->actingAs($admin, 'sanctum')
         ->postJson('/api/v1/admin/users', [
             'name' => '',
+            'username' => '',
             'email' => 'not-an-email',
             'password' => 'short',
             'role' => 'invalid-role',
@@ -257,7 +295,7 @@ it('rejects invalid input when creating a user', function (): void {
         ->assertJsonStructure([
             'success',
             'message',
-            'errors' => ['name', 'email', 'password', 'role'],
+            'errors' => ['name', 'username', 'email', 'password', 'role'],
         ]);
 });
 
@@ -265,26 +303,41 @@ it('updates a user', function (): void {
     $admin = User::factory()->withRole(Roles::Admin)->create();
     $user = User::factory()->withRole(Roles::User)->create([
         'name' => 'Original Name',
+        'username' => 'original_name',
         'email' => 'original@test.com',
     ]);
 
     $this->actingAs($admin, 'sanctum')
         ->putJson("/api/v1/admin/users/{$user->id}", [
             'name' => 'Updated Name',
+            'username' => 'updated_name',
             'email' => 'updated@test.com',
             'role' => 'admin',
         ])
         ->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.name', 'Updated Name')
+        ->assertJsonPath('data.username', 'updated_name')
         ->assertJsonPath('data.email', 'updated@test.com')
         ->assertJsonPath('data.role', 'admin');
 
     $this->assertDatabaseHas('users', [
         'id' => $user->id,
         'name' => 'Updated Name',
+        'username' => 'updated_name',
         'email' => 'updated@test.com',
     ]);
+});
+
+it('rejects a duplicate username when updating a user', function (): void {
+    $admin = User::factory()->withRole(Roles::Admin)->create();
+    $user = User::factory()->withRole(Roles::User)->create();
+    User::factory()->withRole(Roles::User)->create(['username' => 'taken_name']);
+
+    $this->actingAs($admin, 'sanctum')
+        ->putJson("/api/v1/admin/users/{$user->id}", ['username' => 'taken_name'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('username');
 });
 
 it('resets email verification when an admin changes the email', function (): void {
