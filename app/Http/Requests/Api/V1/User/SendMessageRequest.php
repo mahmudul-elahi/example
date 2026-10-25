@@ -9,7 +9,7 @@ use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-#[BodyParameter('audio_duration', type: 'integer', required: false)]
+#[BodyParameter('audio_duration', required: false, type: 'integer')]
 class SendMessageRequest extends FormRequest
 {
     public function authorize(): bool

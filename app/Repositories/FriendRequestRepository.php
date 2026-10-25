@@ -102,6 +102,17 @@ class FriendRequestRepository implements FriendRequestRepositoryInterface
             ->whereKeyNot($user->id)
             ->whereNotNull('users.email_verified_at')
             ->whereNotExists($this->existingConnectionQuery($user))
+            ->whereNotExists(function (Builder $query) use ($user): void {
+                $query->from('blocked_users')
+                    ->where(function (Builder $query) use ($user): void {
+                        $query->whereColumn('blocker_id', 'users.id')
+                            ->where('blocked_id', $user->id);
+                    })
+                    ->orWhere(function (Builder $query) use ($user): void {
+                        $query->where('blocker_id', $user->id)
+                            ->whereColumn('blocked_id', 'users.id');
+                    });
+            })
             ->orderByDesc('mutual_friends_count')
             ->orderBy('users.name')
             ->orderBy('users.id')

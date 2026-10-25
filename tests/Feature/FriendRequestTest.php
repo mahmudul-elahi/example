@@ -436,6 +436,27 @@ it('suggests only verified users without a friendship or pending request', funct
         ->not->toContain($unverified->id);
 });
 
+it('does not suggest users when either person has blocked the other', function (): void {
+    $me = User::factory()->withRole(Roles::User)->create();
+    $blockedByMe = User::factory()->withRole(Roles::User)->create();
+    $blockedMe = User::factory()->withRole(Roles::User)->create();
+    $stranger = User::factory()->withRole(Roles::User)->create();
+
+    BlockedUser::factory()->blocker($me)->blocked($blockedByMe)->create();
+    BlockedUser::factory()->blocker($blockedMe)->blocked($me)->create();
+
+    $response = $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends/suggestions')
+        ->assertOk();
+
+    $ids = collect($response->json('data.items'))->pluck('id')->all();
+
+    expect($ids)
+        ->toContain($stranger->id)
+        ->not->toContain($blockedByMe->id)
+        ->not->toContain($blockedMe->id);
+});
+
 it('ranks friend suggestions by mutual friends', function (): void {
     $me = User::factory()->withRole(Roles::User)->create();
     $myFriend = User::factory()->withRole(Roles::User)->create();
