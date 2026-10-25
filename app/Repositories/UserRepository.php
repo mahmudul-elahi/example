@@ -51,17 +51,18 @@ class UserRepository implements UserRepositoryInterface
     }
 
     /**
-     * The cover images belonging to content the user authored, including
+     * The media files belonging to content the user authored, including
      * soft-deleted content that a user deletion would remove from the database.
      *
      * @return list<string>
      */
-    public function contentCoverImages(User $user): array
+    public function authoredMediaFiles(User $user): array
     {
         $images = [
             ...$user->blogPosts()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
             ...$user->petMemorials()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
             ...$user->products()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
+            ...$user->stories()->whereNotNull('media_path')->pluck('media_path')->all(),
         ];
 
         return array_values(array_unique($images));

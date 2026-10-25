@@ -6,6 +6,7 @@ use App\Enums\Roles;
 use App\Models\BlogPost;
 use App\Models\PetMemorial;
 use App\Models\Product;
+use App\Models\Story;
 use App\Models\User;
 use App\Services\UserServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -465,10 +466,11 @@ it('deletes the cover images of the content the user authored', function (): voi
     $post = BlogPost::factory()->forUser($user)->create(['cover_image' => 'blog/cover.jpg']);
     $memorial = PetMemorial::factory()->forUser($user)->create(['cover_image' => 'memorials/cover.jpg']);
     $product = Product::factory()->forUser($user)->create(['cover_image' => 'products/cover.jpg']);
+    $story = Story::factory()->for($user)->create(['media_path' => 'stories/media.jpg']);
     $trashedPost = BlogPost::factory()->forUser($user)->create(['cover_image' => 'blog/trashed.jpg']);
     $trashedPost->delete();
 
-    foreach (['blog/cover.jpg', 'memorials/cover.jpg', 'products/cover.jpg', 'blog/trashed.jpg'] as $path) {
+    foreach (['blog/cover.jpg', 'memorials/cover.jpg', 'products/cover.jpg', 'blog/trashed.jpg', 'stories/media.jpg'] as $path) {
         Storage::put($path, 'image');
     }
 
@@ -480,10 +482,12 @@ it('deletes the cover images of the content the user authored', function (): voi
     Storage::assertMissing('memorials/cover.jpg');
     Storage::assertMissing('products/cover.jpg');
     Storage::assertMissing('blog/trashed.jpg');
+    Storage::assertMissing('stories/media.jpg');
 
     $this->assertDatabaseMissing('blog_posts', ['id' => $post->id]);
     $this->assertDatabaseMissing('pet_memorials', ['id' => $memorial->id]);
     $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    $this->assertDatabaseMissing('stories', ['id' => $story->id]);
     $this->assertDatabaseMissing('blog_posts', ['id' => $trashedPost->id]);
 });
 

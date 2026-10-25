@@ -137,7 +137,7 @@ class UserService implements UserServiceInterface
 
         $files = array_values(array_filter([
             $user->avatar,
-            ...$this->repository->contentCoverImages($user),
+            ...$this->repository->authoredMediaFiles($user),
         ]));
 
         DB::transaction(function () use ($user): void {

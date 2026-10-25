@@ -34,7 +34,7 @@ interface UserRepositoryInterface
     /**
      * @return list<string>
      */
-    public function contentCoverImages(User $user): array;
+    public function authoredMediaFiles(User $user): array;
 
     public function loadRoles(User $user): User;
 
