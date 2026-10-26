@@ -36,7 +36,7 @@ it('lists only publicly visible memorials to a guest', function (): void {
                         'author' => ['id', 'name'],
                     ],
                 ],
-                'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
+                'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_next'],
             ],
         ]);
 });

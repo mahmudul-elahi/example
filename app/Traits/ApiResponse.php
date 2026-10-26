@@ -63,6 +63,7 @@ trait ApiResponse
                 'per_page' => $paginator->perPage(),
                 'next_cursor' => $paginator->nextCursor()?->encode(),
                 'prev_cursor' => $paginator->previousCursor()?->encode(),
+                'has_next' => $paginator->hasMorePages(),
             ],
         ], $message, $code);
     }

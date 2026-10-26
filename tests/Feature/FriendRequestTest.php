@@ -294,7 +294,7 @@ it('lists only received pending requests', function (): void {
                 'items' => [
                     '*' => ['id', 'status', 'sender' => ['id', 'name'], 'receiver' => ['id', 'name']],
                 ],
-                'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
+                'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_next'],
             ],
         ]);
 });
@@ -306,6 +306,7 @@ it('paginates received requests with a cursor', function (): void {
     $firstPage = $this->actingAs($receiver, 'sanctum')
         ->getJson('/api/v1/friend-requests?per_page=1')
         ->assertOk()
+        ->assertJsonPath('data.meta.has_next', true)
         ->assertJsonCount(1, 'data.items');
 
     $cursor = $firstPage->json('data.meta.next_cursor');
@@ -315,9 +316,18 @@ it('paginates received requests with a cursor', function (): void {
     $secondPage = $this->actingAs($receiver, 'sanctum')
         ->getJson('/api/v1/friend-requests?per_page=1&cursor='.urlencode((string) $cursor))
         ->assertOk()
+        ->assertJsonPath('data.meta.has_next', true)
         ->assertJsonCount(1, 'data.items');
 
     expect($secondPage->json('data.items.0.id'))->not->toBe($firstPage->json('data.items.0.id'));
+
+    $lastPage = $this->actingAs($receiver, 'sanctum')
+        ->getJson('/api/v1/friend-requests?per_page=1&cursor='.urlencode((string) $secondPage->json('data.meta.next_cursor')))
+        ->assertOk()
+        ->assertJsonPath('data.meta.has_next', false)
+        ->assertJsonCount(1, 'data.items');
+
+    expect($lastPage->json('data.meta.next_cursor'))->toBeNull();
 });
 
 it('returns the pending request count', function (): void {

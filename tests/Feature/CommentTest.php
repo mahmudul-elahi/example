@@ -39,7 +39,7 @@ describe('index', function (): void {
                             'created_at',
                         ],
                     ],
-                    'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
+                    'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_next'],
                 ],
             ]);
     });

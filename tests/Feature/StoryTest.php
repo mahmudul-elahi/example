@@ -98,7 +98,7 @@ it('lists only active stories from friends who have not blocked each other', fun
                 'items' => [
                     '*' => ['id', 'caption', 'media_type', 'media_url', 'expires_at', 'created_at', 'author'],
                 ],
-                'meta' => ['per_page', 'next_cursor', 'prev_cursor'],
+                'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_next'],
             ],
         ]);
 
