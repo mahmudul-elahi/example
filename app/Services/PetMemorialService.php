@@ -39,7 +39,15 @@ class PetMemorialService implements PetMemorialServiceInterface
      */
     public function mine(User $user, int $perPage, ?string $search = null, ?string $cursor = null): CursorPaginator
     {
-        return $this->repository->cursorPaginateForUser($user, $perPage, $search, $cursor);
+        return $this->repository->cursorPaginateForUser($user, $perPage, $search, $cursor, false);
+    }
+
+    /**
+     * @return CursorPaginator<int, PetMemorial>
+     */
+    public function forUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null, bool $publicOnly = true): CursorPaginator
+    {
+        return $this->repository->cursorPaginateForUser($user, $perPage, $search, $cursor, $publicOnly);
     }
 
     public function find(int $id): PetMemorial

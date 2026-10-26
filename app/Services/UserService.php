@@ -29,6 +29,11 @@ class UserService implements UserServiceInterface
         return $this->repository->find($id);
     }
 
+    public function getProfile(User $user, ?User $viewer = null): User
+    {
+        return $this->repository->getProfile($user, $viewer);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */

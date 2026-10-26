@@ -38,6 +38,8 @@ interface UserRepositoryInterface
 
     public function loadRoles(User $user): User;
 
+    public function getProfile(User $user, ?User $viewer = null): User;
+
     public function updatePassword(User $user, string $password): void;
 
     public function countByRole(Roles $role): int;

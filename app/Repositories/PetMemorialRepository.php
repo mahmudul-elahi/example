@@ -57,12 +57,13 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
     /**
      * @return CursorPaginator<int, PetMemorial>
      */
-    public function cursorPaginateForUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null): CursorPaginator
+    public function cursorPaginateForUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null, bool $publicOnly = false): CursorPaginator
     {
         $perPage = min(max($perPage, 1), 100);
 
         return PetMemorial::query()
             ->where('user_id', $user->id)
+            ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
             ->with('user')
             ->withCount(['comments', 'likes'])
             ->when($search, function (Builder $query, string $search): void {

@@ -28,7 +28,7 @@ interface PetMemorialRepositoryInterface
     /**
      * @return CursorPaginator<int, PetMemorial>
      */
-    public function cursorPaginateForUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null): CursorPaginator;
+    public function cursorPaginateForUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null, bool $publicOnly = false): CursorPaginator;
 
     public function find(int $id): PetMemorial;
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\User\MessageController;
 use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\PetMemorialController;
 use App\Http\Controllers\Api\V1\User\StoryController;
+use App\Http\Controllers\Api\V1\User\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
@@ -48,6 +49,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::get('users/blocked', [BlockedUserController::class, 'index']);
     Route::post('users/{user}/block', [BlockedUserController::class, 'block']);
     Route::delete('users/{user}/block', [BlockedUserController::class, 'unblock']);
+
+    Route::get('users/{user}', [UserProfileController::class, 'show']);
+    Route::get('users/{user}/memorials', [UserProfileController::class, 'memorials']);
+    Route::get('users/{user}/stories', [UserProfileController::class, 'stories']);
 
     Route::get('conversations', [ConversationController::class, 'index']);
     Route::post('conversations', [ConversationController::class, 'store']);

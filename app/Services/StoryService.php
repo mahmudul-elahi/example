@@ -56,6 +56,12 @@ class StoryService implements StoryServiceInterface
         return $this->stories->paginateActiveForUser($user, $perPage, $cursor);
     }
 
+    /** @return CursorPaginator<int, Story> */
+    public function forUser(User $user, int $perPage, ?string $cursor): CursorPaginator
+    {
+        return $this->stories->paginateActiveForUser($user, $perPage, $cursor);
+    }
+
     public function delete(Story $story): void
     {
         $this->stories->delete($story);

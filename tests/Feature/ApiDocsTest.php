@@ -37,6 +37,7 @@ it('orders the tags by their configured weight', function (): void {
             'Public - Blog',
             'Public - Shop',
             'User - Memorials',
+            'User - Profile',
             'User - Blog',
             'User - Shop',
             'User - Comments',

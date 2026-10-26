@@ -18,6 +18,8 @@ interface UserServiceInterface
 
     public function find(int $id): User;
 
+    public function getProfile(User $user, ?User $viewer = null): User;
+
     /**
      * @param  array<string, mixed>  $data
      */

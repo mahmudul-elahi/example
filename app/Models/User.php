@@ -84,6 +84,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
+     * Retrieve the model for a bound value, allowing lookup by ID or username.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $clean = ltrim((string) $value, '@');
+
+        return $this->newQuery()->where($field ?? (ctype_digit($clean) ? 'id' : 'username'), $clean)->first();
+    }
+
+    /**
      * The pet memorials authored by the user.
      *
      * @return HasMany<PetMemorial, $this>

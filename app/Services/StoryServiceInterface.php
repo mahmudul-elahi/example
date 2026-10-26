@@ -21,5 +21,8 @@ interface StoryServiceInterface
     /** @return CursorPaginator<int, Story> */
     public function mine(User $user, int $perPage, ?string $cursor): CursorPaginator;
 
+    /** @return CursorPaginator<int, Story> */
+    public function forUser(User $user, int $perPage, ?string $cursor): CursorPaginator;
+
     public function delete(Story $story): void;
 }

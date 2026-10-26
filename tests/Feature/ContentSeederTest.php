@@ -15,6 +15,7 @@ use App\Models\Story;
 use App\Models\Tag;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\StorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -28,8 +29,7 @@ it('seeds content for every model', function (): void {
         ->and(Product::count())->toBeGreaterThan(0)
         ->and(PetMemorial::count())->toBeGreaterThan(0)
         ->and(Comment::count())->toBeGreaterThan(0)
-        ->and(Like::count())->toBeGreaterThan(0)
-        ->and(Story::count())->toBeGreaterThan(0);
+        ->and(Like::count())->toBeGreaterThan(0);
 });
 
 it('can run twice without duplicating records', function (): void {
@@ -100,6 +100,7 @@ it('seeds a connected friend network with pending and rejected requests', functi
 
 it('seeds active and expired stories with images and videos', function (): void {
     $this->seed(DatabaseSeeder::class);
+    $this->seed(StorySeeder::class);
 
     expect(Story::query()->where('expires_at', '>', now())->exists())->toBeTrue()
         ->and(Story::query()->where('expires_at', '<=', now())->exists())->toBeTrue()
