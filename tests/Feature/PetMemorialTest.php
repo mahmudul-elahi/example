@@ -17,6 +17,44 @@ it('requires authentication to list memorials', function (): void {
         ->assertUnauthorized();
 });
 
+it('requires authentication to list own memorials', function (): void {
+    $this->getJson('/api/v1/memorials/mine')
+        ->assertUnauthorized();
+});
+
+it('lists all memorials owned by the authenticated user including drafts and private ones', function (): void {
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $other = User::factory()->withRole(Roles::User)->create();
+
+    $public = PetMemorial::factory()->forUser($owner)->create();
+    $draft = PetMemorial::factory()->draft()->forUser($owner)->create();
+    $private = PetMemorial::factory()->private()->forUser($owner)->create();
+    $otherMemorial = PetMemorial::factory()->forUser($other)->create();
+
+    $response = $this->actingAs($owner, 'sanctum')
+        ->getJson('/api/v1/memorials/mine')
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'My memorials')
+        ->assertJsonCount(3, 'data.items');
+
+    $ids = collect($response->json('data.items'))->pluck('id')->all();
+    expect($ids)->toContain($public->id, $draft->id, $private->id)
+        ->and($ids)->not->toContain($otherMemorial->id);
+});
+
+it('filters own memorials by search', function (): void {
+    $owner = User::factory()->withRole(Roles::User)->create();
+    PetMemorial::factory()->forUser($owner)->create(['pet_name' => 'Rex']);
+    PetMemorial::factory()->forUser($owner)->create(['pet_name' => 'Bella']);
+
+    $this->actingAs($owner, 'sanctum')
+        ->getJson('/api/v1/memorials/mine?search=Rex')
+        ->assertOk()
+        ->assertJsonCount(1, 'data.items')
+        ->assertJsonPath('data.items.0.pet_name', 'Rex');
+});
+
 it('lists only publicly visible memorials to an authenticated user', function (): void {
     $user = User::factory()->withRole(Roles::User)->create();
     PetMemorial::factory()->count(2)->create();

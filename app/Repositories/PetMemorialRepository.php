@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\PetMemorial;
+use App\Models\User;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -43,6 +44,27 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
             ->with('user')
             ->withCount(['comments', 'likes'])
             ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
+            ->when($search, function (Builder $query, string $search): void {
+                $query->where(function (Builder $q) use ($search): void {
+                    $q->where('pet_name', 'like', "%{$search}%")
+                        ->orWhere('body', 'like', "%{$search}%");
+                });
+            })
+            ->latest('id')
+            ->cursorPaginate($perPage, ['*'], 'cursor', $cursor);
+    }
+
+    /**
+     * @return CursorPaginator<int, PetMemorial>
+     */
+    public function cursorPaginateForUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null): CursorPaginator
+    {
+        $perPage = min(max($perPage, 1), 100);
+
+        return PetMemorial::query()
+            ->where('user_id', $user->id)
+            ->with('user')
+            ->withCount(['comments', 'likes'])
             ->when($search, function (Builder $query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {
                     $q->where('pet_name', 'like', "%{$search}%")

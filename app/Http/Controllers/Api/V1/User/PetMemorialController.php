@@ -34,6 +34,13 @@ class PetMemorialController extends Controller
         return $this->cursorPaginated($memorials, PetMemorialResource::collection($memorials->items()));
     }
 
+    public function mine(IndexPetMemorialRequest $request, #[CurrentUser] User $user): JsonResponse
+    {
+        $memorials = $this->memorials->mine($user, $request->perPage(), $request->search(), $request->cursor());
+
+        return $this->cursorPaginated($memorials, PetMemorialResource::collection($memorials->items()), 'My memorials');
+    }
+
     public function store(StorePetMemorialRequest $request, #[CurrentUser] User $user): JsonResponse
     {
         $memorial = $this->memorials->create($user, $request->validated());

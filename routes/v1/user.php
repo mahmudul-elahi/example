@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\User\StoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
+    Route::get('memorials/mine', [PetMemorialController::class, 'mine']);
     Route::apiResource('memorials', PetMemorialController::class)->except(['show']);
 
     Route::get('memorials/{memorial}/comments', [CommentController::class, 'indexMemorial']);

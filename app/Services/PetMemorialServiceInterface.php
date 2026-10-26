@@ -25,6 +25,11 @@ interface PetMemorialServiceInterface
      */
     public function cursorPaginate(int $perPage, ?string $search, bool $publicOnly, ?string $cursor = null): CursorPaginator;
 
+    /**
+     * @return CursorPaginator<int, PetMemorial>
+     */
+    public function mine(User $user, int $perPage, ?string $search = null, ?string $cursor = null): CursorPaginator;
+
     public function find(int $id): PetMemorial;
 
     /**

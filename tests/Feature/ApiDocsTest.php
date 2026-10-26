@@ -59,6 +59,7 @@ it('documents the memorial endpoints under the Memorials tags', function (): voi
     $response = $this->getJson('/docs/api.json')->assertOk();
 
     expect($response->json('paths./v1/memorials.get.tags'))->toBe(['User - Memorials'])
+        ->and($response->json('paths./v1/memorials/mine.get.tags'))->toBe(['User - Memorials'])
         ->and($response->json('paths./v1/memorials.post.tags'))->toBe(['User - Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}.get.tags'))->toBe(['Public - Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}.put.tags'))->toBe(['User - Memorials'])

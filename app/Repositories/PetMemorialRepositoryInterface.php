@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\PetMemorial;
+use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -23,6 +24,11 @@ interface PetMemorialRepositoryInterface
      * @return CursorPaginator<int, PetMemorial>
      */
     public function cursorPaginate(int $perPage, ?string $search, bool $publicOnly, ?string $cursor = null): CursorPaginator;
+
+    /**
+     * @return CursorPaginator<int, PetMemorial>
+     */
+    public function cursorPaginateForUser(User $user, int $perPage, ?string $search = null, ?string $cursor = null): CursorPaginator;
 
     public function find(int $id): PetMemorial;
 
