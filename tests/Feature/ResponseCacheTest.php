@@ -6,34 +6,12 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\Like;
-use App\Models\PetMemorial;
 use App\Models\Product;
 use App\Models\User;
 use App\Repositories\LikeRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
-
-it('serves the memorials index from the cache and invalidates it when a memorial is created', function (): void {
-    PetMemorial::factory()->create();
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.meta.per_page', 15);
-
-    // Serves from cache on subsequent read
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertHeader('X-Cache-Status', 'HIT')
-        ->assertJsonPath('data.meta.per_page', 15);
-
-    // Creating a memorial invalidates the cache
-    PetMemorial::factory()->create();
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.meta.per_page', 15);
-});
 
 it('serves the shop index from the cache and invalidates it when a product is created', function (): void {
     Product::factory()->create();
@@ -123,27 +101,6 @@ it('invalidates the blog index cache when a post is deleted', function (): void 
         ->assertJsonPath('data.meta.total', 0);
 });
 
-it('serves a memorial\'s comments from the cache and invalidates it when a comment is added', function (): void {
-    $memorial = PetMemorial::factory()->create();
-    Comment::factory()->forCommentable($memorial)->create();
-
-    $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
-        ->assertOk()
-        ->assertJsonPath('data.meta.per_page', 15);
-
-    // Serves from cache on subsequent read
-    $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
-        ->assertOk()
-        ->assertJsonPath('data.meta.per_page', 15);
-
-    // Adding a comment invalidates the comments thread
-    Comment::factory()->forCommentable($memorial)->create();
-
-    $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
-        ->assertOk()
-        ->assertJsonPath('data.meta.per_page', 15);
-});
-
 it('serves a blog post\'s comments from the cache and invalidates it when a comment is added', function (): void {
     $post = BlogPost::factory()->create();
     Comment::factory()->forCommentable($post)->create();
@@ -202,34 +159,6 @@ it('invalidates the cached product when a comment on it changes', function (): v
         ->assertJsonPath('data.comments_count', 1);
 });
 
-it('invalidates the memorial index comments count when a comment is added', function (): void {
-    $memorial = PetMemorial::factory()->create();
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.items.0.comments_count', 0);
-
-    Comment::factory()->forCommentable($memorial)->create();
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.items.0.comments_count', 1);
-});
-
-it('does not cache the memorial show route so every visit records a view', function (): void {
-    $memorial = PetMemorial::factory()->create(['views_count' => 0]);
-
-    $this->getJson("/api/v1/memorials/{$memorial->slug}")
-        ->assertOk()
-        ->assertJsonPath('data.views_count', 1);
-
-    $this->getJson("/api/v1/memorials/{$memorial->slug}")
-        ->assertOk()
-        ->assertJsonPath('data.views_count', 2);
-
-    expect($memorial->refresh()->views_count)->toBe(2);
-});
-
 it('does not cache the blog show route so every visit records a view', function (): void {
     $post = BlogPost::factory()->create(['views_count' => 0]);
 
@@ -245,51 +174,30 @@ it('does not cache the blog show route so every visit records a view', function 
 });
 
 it('invalidates cached pagination and search variants of a cached index', function (): void {
-    PetMemorial::factory()->create(['pet_name' => 'Findable']);
-    PetMemorial::factory()->create(['body' => 'Nothing matching here.']);
+    BlogPost::factory()->create(['title' => 'Findable Title']);
+    BlogPost::factory()->create(['title' => 'Other Title']);
 
-    $this->getJson('/api/v1/memorials?search=Findable')
+    $this->getJson('/api/v1/blog?search=Findable')
         ->assertOk()
         ->assertJsonPath('data.meta.per_page', 15);
 
     // Serves the search variant from cache
-    $this->getJson('/api/v1/memorials?search=Findable')
+    $this->getJson('/api/v1/blog?search=Findable')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'HIT')
         ->assertJsonPath('data.meta.per_page', 15);
 
-    // Creating a matching memorial invalidates the search variant too
-    PetMemorial::factory()->create(['pet_name' => 'Another Findable']);
+    // Creating a matching post invalidates the search variant too
+    BlogPost::factory()->create(['title' => 'Another Findable']);
 
-    $this->getJson('/api/v1/memorials?search=Findable')
+    $this->getJson('/api/v1/blog?search=Findable')
         ->assertOk()
         ->assertJsonPath('data.meta.per_page', 15);
 
     // The bare index URL is invalidated in the same sweep
-    $this->getJson('/api/v1/memorials')
+    $this->getJson('/api/v1/blog')
         ->assertOk()
         ->assertJsonPath('data.meta.per_page', 15);
-});
-
-it('invalidates the memorials index cache when a memorial is liked and unliked', function (): void {
-    $memorial = PetMemorial::factory()->create();
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.items.0.likes_count', 0);
-
-    $like = Like::factory()->forLikeable($memorial)->create();
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.items.0.likes_count', 1);
-
-    // Bulk deletes through the repository must also invalidate
-    resolve(LikeRepositoryInterface::class)->delete($like->user, $memorial);
-
-    $this->getJson('/api/v1/memorials')
-        ->assertOk()
-        ->assertJsonPath('data.items.0.likes_count', 0);
 });
 
 it('invalidates the blog index cache when a post is liked and unliked', function (): void {
@@ -350,26 +258,26 @@ it('invalidates the blog index cache when a category is renamed', function (): v
 });
 
 it('isolates cached public responses per authenticated user while guests share one entry', function (): void {
-    PetMemorial::factory()->create();
+    BlogPost::factory()->create();
 
     // Guests share a single entry between them.
-    $this->getJson('/api/v1/memorials')
+    $this->getJson('/api/v1/blog')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'MISS');
 
-    $guest = $this->getJson('/api/v1/memorials')
+    $guest = $this->getJson('/api/v1/blog')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'HIT');
 
     // The default cache profile keys entries per authenticated user: each
     // account gets its own entry and never receives another user's response.
     $firstRead = $this->actingAs(User::factory()->create(), 'sanctum')
-        ->getJson('/api/v1/memorials')
+        ->getJson('/api/v1/blog')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'MISS');
 
     $secondUser = $this->actingAs(User::factory()->create(), 'sanctum')
-        ->getJson('/api/v1/memorials')
+        ->getJson('/api/v1/blog')
         ->assertOk()
         ->assertHeader('X-Cache-Status', 'MISS');
 

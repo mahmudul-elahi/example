@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\IndexCommentRequest;
 use App\Http\Resources\V1\CommentResource;
 use App\Models\BlogPost;
-use App\Models\PetMemorial;
 use App\Models\Product;
 use App\Services\CommentServiceInterface;
 use App\Traits\ApiResponse;
@@ -28,15 +27,6 @@ class CommentController extends Controller
     public function __construct(
         protected CommentServiceInterface $comments,
     ) {}
-
-    #[Group('Public - Memorials', weight: 10)]
-    #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]
-    public function indexMemorial(IndexCommentRequest $request, PetMemorial $memorial): JsonResponse
-    {
-        $comments = $this->comments->cursorPaginate($memorial, $request->perPage(), $request->cursor());
-
-        return $this->cursorPaginated($comments, CommentResource::collection($comments->items()));
-    }
 
     #[Group('Public - Blog', weight: 20)]
     #[Cache(lifetime: 600, tags: [ResponseCacheTag::Comments->value])]

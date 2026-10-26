@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Api\V1\Public;
+namespace App\Http\Requests\Api\V1\User;
 
 use App\Models\PetMemorial;
 use Illuminate\Foundation\Http\FormRequest;

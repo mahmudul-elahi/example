@@ -13,12 +13,21 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 describe('index', function (): void {
-    it('lists top-level comments with their replies to a guest', function (): void {
+    it('requires authentication to list comments of a memorial', function (): void {
+        $memorial = PetMemorial::factory()->create();
+
+        $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+            ->assertUnauthorized();
+    });
+
+    it('lists top-level comments with their replies to an authenticated user', function (): void {
+        $user = User::factory()->withRole(Roles::User)->create();
         $memorial = PetMemorial::factory()->create();
         $comment = Comment::factory()->forCommentable($memorial)->create();
         Comment::factory()->forCommentable($memorial)->replyTo($comment)->create();
 
-        $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/v1/memorials/{$memorial->slug}/comments")
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.meta.per_page', 15)
@@ -44,10 +53,12 @@ describe('index', function (): void {
             ]);
     });
 
-    it('forbids a guest from listing comments of a private memorial', function (): void {
+    it('forbids an authenticated user from listing comments of another user\'s private memorial', function (): void {
+        $user = User::factory()->withRole(Roles::User)->create();
         $memorial = PetMemorial::factory()->private()->create();
 
-        $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/v1/memorials/{$memorial->slug}/comments")
             ->assertForbidden();
     });
 
@@ -432,10 +443,10 @@ it('returns 422 when the parent comment belongs to another resource', function (
 });
 
 it('does not expose the comment author email to a guest', function (): void {
-    $memorial = PetMemorial::factory()->create();
-    Comment::factory()->forCommentable($memorial)->create();
+    $post = BlogPost::factory()->create();
+    Comment::factory()->forCommentable($post)->create();
 
-    $this->getJson("/api/v1/memorials/{$memorial->slug}/comments")
+    $this->getJson("/api/v1/blog/{$post->slug}/comments")
         ->assertOk()
         ->assertJsonStructure([
             'data' => [

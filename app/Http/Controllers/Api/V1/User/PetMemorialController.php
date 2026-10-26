@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\DeletePetMemorialRequest;
+use App\Http\Requests\Api\V1\User\IndexPetMemorialRequest;
 use App\Http\Requests\Api\V1\User\StorePetMemorialRequest;
 use App\Http\Requests\Api\V1\User\UpdatePetMemorialRequest;
 use App\Http\Resources\V1\PetMemorialResource;
@@ -25,6 +26,13 @@ class PetMemorialController extends Controller
     public function __construct(
         protected PetMemorialServiceInterface $memorials,
     ) {}
+
+    public function index(IndexPetMemorialRequest $request): JsonResponse
+    {
+        $memorials = $this->memorials->cursorPaginate($request->perPage(), $request->search(), true, $request->cursor());
+
+        return $this->cursorPaginated($memorials, PetMemorialResource::collection($memorials->items()));
+    }
 
     public function store(StorePetMemorialRequest $request, #[CurrentUser] User $user): JsonResponse
     {

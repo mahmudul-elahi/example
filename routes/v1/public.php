@@ -15,9 +15,9 @@ use Spatie\ResponseCache\Middlewares\CacheResponse;
 | so it is attached to every public route below and the per-action attributes
 | decide the lifetime (or opt out of caching).
 */
+
 Route::middleware(CacheResponse::class)->group(function (): void {
-    Route::apiResource('memorials', PetMemorialController::class)->only(['index', 'show']);
-    Route::get('memorials/{memorial}/comments', [CommentController::class, 'indexMemorial']);
+    Route::get('memorials/{memorial}', [PetMemorialController::class, 'show']);
 
     Route::get('blog', [BlogPostController::class, 'index']);
     Route::get('blog/{blog_post}', [BlogPostController::class, 'show']);

@@ -58,7 +58,7 @@ it('orders the tags by their configured weight', function (): void {
 it('documents the memorial endpoints under the Memorials tags', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/memorials.get.tags'))->toBe(['Public - Memorials'])
+    expect($response->json('paths./v1/memorials.get.tags'))->toBe(['User - Memorials'])
         ->and($response->json('paths./v1/memorials.post.tags'))->toBe(['User - Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}.get.tags'))->toBe(['Public - Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}.put.tags'))->toBe(['User - Memorials'])
@@ -68,7 +68,7 @@ it('documents the memorial endpoints under the Memorials tags', function (): voi
 it('documents the memorial comment and like endpoints', function (): void {
     $response = $this->getJson('/docs/api.json')->assertOk();
 
-    expect($response->json('paths./v1/memorials/{memorial}/comments.get.tags'))->toBe(['Public - Memorials'])
+    expect($response->json('paths./v1/memorials/{memorial}/comments.get.tags'))->toBe(['User - Memorials'])
         ->and($response->json('paths./v1/memorials/{memorial}/comments.post.tags'))->toBe(['User - Memorials'])
         ->and($response->json('paths./v1/comments/{type}/{comment}.delete.tags'))->toBe(['User - Comments'])
         ->and($response->json('paths./v1/memorials/{memorial}/like.post.tags'))->toBe(['User - Memorials']);
@@ -185,7 +185,7 @@ it('marks the public blog listing as not requiring a bearer token', function ():
 
     expect($response->json('paths./v1/blog.get.security'))->toBe([])
         ->and($response->json('paths./v1/shop.get.security'))->toBe([])
-        ->and($response->json('paths./v1/memorials.get.security'))->toBe([])
+        ->and($response->json('paths./v1/memorials/{memorial}.get.security'))->toBe([])
         ->and($response->json('paths./v1/blog/{blogPost}/comments.get.security'))->toBe([])
         ->and($response->json('paths./v1/shop/{product}/comments.get.security'))->toBe([]);
 });

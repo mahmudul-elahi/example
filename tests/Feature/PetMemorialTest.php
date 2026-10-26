@@ -12,12 +12,19 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-it('lists only publicly visible memorials to a guest', function (): void {
+it('requires authentication to list memorials', function (): void {
+    $this->getJson('/api/v1/memorials')
+        ->assertUnauthorized();
+});
+
+it('lists only publicly visible memorials to an authenticated user', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create();
     PetMemorial::factory()->count(2)->create();
     PetMemorial::factory()->draft()->create();
     PetMemorial::factory()->private()->create();
 
-    $this->getJson('/api/v1/memorials')
+    $this->actingAs($user, 'sanctum')
+        ->getJson('/api/v1/memorials')
         ->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.meta.per_page', 15)
@@ -41,10 +48,12 @@ it('lists only publicly visible memorials to a guest', function (): void {
         ]);
 });
 
-it('includes the memorial body in the public index', function (): void {
+it('includes the memorial body in the index', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create();
     $memorial = PetMemorial::factory()->create(['body' => 'A gentle soul who loved the beach.']);
 
-    $this->getJson('/api/v1/memorials')
+    $this->actingAs($user, 'sanctum')
+        ->getJson('/api/v1/memorials')
         ->assertOk()
         ->assertJsonPath('data.items.0.body', 'A gentle soul who loved the beach.')
         ->assertJsonMissingPath('data.items.0.title')
@@ -53,10 +62,12 @@ it('includes the memorial body in the public index', function (): void {
 });
 
 it('filters memorials by search', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create();
     PetMemorial::factory()->create(['pet_name' => 'Rex']);
     PetMemorial::factory()->create(['pet_name' => 'Bella']);
 
-    $this->getJson('/api/v1/memorials?search=Rex')
+    $this->actingAs($user, 'sanctum')
+        ->getJson('/api/v1/memorials?search=Rex')
         ->assertOk()
         ->assertJsonPath('data.meta.per_page', 15)
         ->assertJsonPath('data.items.0.pet_name', 'Rex');

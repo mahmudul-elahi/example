@@ -14,8 +14,9 @@ use App\Http\Controllers\Api\V1\User\StoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
-    Route::apiResource('memorials', PetMemorialController::class)->except(['index', 'show']);
+    Route::apiResource('memorials', PetMemorialController::class)->except(['show']);
 
+    Route::get('memorials/{memorial}/comments', [CommentController::class, 'indexMemorial']);
     Route::post('memorials/{memorial}/comments', [CommentController::class, 'storeMemorial']);
     Route::post('blog/{blog_post}/comments', [CommentController::class, 'storeBlogPost']);
     Route::post('shop/{product}/comments', [CommentController::class, 'storeProduct']);
