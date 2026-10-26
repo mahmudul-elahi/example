@@ -50,6 +50,8 @@ class StoryController extends Controller
 
     public function media(ViewStoryMediaRequest $request, Story $story): StreamedResponse
     {
+        abort_unless(Storage::exists($story->media_path), 404);
+
         return Storage::response($story->media_path);
     }
 

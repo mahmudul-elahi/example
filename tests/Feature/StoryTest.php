@@ -182,6 +182,17 @@ it('deletes the owners story and its media but forbids other users', function ()
     Storage::assertMissing($story->media_path);
 });
 
+it('returns not found when the story media file is missing', function (): void {
+    Storage::fake();
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $story = Story::factory()->for($owner)->create();
+
+    $this->actingAs($owner, 'sanctum')
+        ->getJson('/api/v1/stories/'.$story->id.'/media')
+        ->assertNotFound()
+        ->assertJsonPath('success', false);
+});
+
 it('removes expired stories and their media during pruning', function (): void {
     Storage::fake();
     $user = User::factory()->withRole(Roles::User)->create();

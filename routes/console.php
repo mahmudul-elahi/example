@@ -14,4 +14,4 @@ Artisan::command('inspire', function (): void {
 
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
 Schedule::command('model:prune', ['--model' => [OtpCode::class]])->daily();
-Schedule::command('model:prune', ['--model' => [Story::class]])->hourly();
+Schedule::command('model:prune', ['--model' => [Story::class]])->hourly()->withoutOverlapping();
