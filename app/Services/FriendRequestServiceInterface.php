@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 #[Bind(FriendRequestService::class)]
 #[Scoped]
@@ -62,7 +62,7 @@ interface FriendRequestServiceInterface
     /**
      * Verified users the given user is not connected to, ranked by mutual friends.
      *
-     * @return LengthAwarePaginator<int, User>
+     * @return Collection<int, User>
      */
-    public function suggestions(User $user, int $perPage): LengthAwarePaginator;
+    public function suggestions(User $user): Collection;
 }

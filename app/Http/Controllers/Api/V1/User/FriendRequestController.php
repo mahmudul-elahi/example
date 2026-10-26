@@ -84,11 +84,8 @@ class FriendRequestController extends Controller
 
     public function suggestions(IndexFriendSuggestionRequest $request, #[CurrentUser] User $user): JsonResponse
     {
-        $suggestions = $this->friendRequests->suggestions($user, $request->perPage());
-
-        return $this->paginated(
-            $suggestions,
-            FriendSuggestionResource::collection($suggestions->items()),
+        return $this->success(
+            FriendSuggestionResource::collection($this->friendRequests->suggestions($user)),
             'Friend suggestions'
         );
     }

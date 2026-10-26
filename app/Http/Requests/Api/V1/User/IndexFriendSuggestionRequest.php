@@ -13,19 +13,4 @@ class IndexFriendSuggestionRequest extends FormRequest
     {
         return $this->user()?->can('viewAny', FriendRequest::class) === true;
     }
-
-    /**
-     * @return array<string, array<int, mixed>>
-     */
-    public function rules(): array
-    {
-        return [
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
-        ];
-    }
-
-    public function perPage(): int
-    {
-        return (int) $this->input('per_page', 15);
-    }
 }

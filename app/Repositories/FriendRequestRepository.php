@@ -10,7 +10,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
@@ -92,9 +92,9 @@ class FriendRequestRepository implements FriendRequestRepositoryInterface
      * Verified users the given user has no friendship or pending request with,
      * ranked by the number of friends both users share.
      *
-     * @return LengthAwarePaginator<int, User>
+     * @return Collection<int, User>
      */
-    public function paginateSuggestions(User $user, int $perPage): LengthAwarePaginator
+    public function suggestions(User $user, int $limit): Collection
     {
         return User::query()
             ->select('users.*')
@@ -116,7 +116,8 @@ class FriendRequestRepository implements FriendRequestRepositoryInterface
             ->orderByDesc('mutual_friends_count')
             ->orderBy('users.name')
             ->orderBy('users.id')
-            ->paginate($this->clampPerPage($perPage));
+            ->limit($limit)
+            ->get();
     }
 
     /**

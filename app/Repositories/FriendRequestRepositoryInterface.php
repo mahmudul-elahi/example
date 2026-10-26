@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 #[Bind(FriendRequestRepository::class)]
 #[Scoped]
@@ -58,9 +58,9 @@ interface FriendRequestRepositoryInterface
      * Verified users the given user has no friendship or pending request with,
      * ranked by the number of friends both users share.
      *
-     * @return LengthAwarePaginator<int, User>
+     * @return Collection<int, User>
      */
-    public function paginateSuggestions(User $user, int $perPage): LengthAwarePaginator;
+    public function suggestions(User $user, int $limit): Collection;
 
     /**
      * @param  array<string, mixed>  $data

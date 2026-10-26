@@ -423,7 +423,7 @@ it('suggests only verified users without a friendship or pending request', funct
         ->assertOk()
         ->assertJsonPath('success', true);
 
-    $ids = collect($response->json('data.items'))->pluck('id')->all();
+    $ids = collect($response->json('data'))->pluck('id')->all();
 
     expect($ids)
         ->toContain($removedFriend->id)
@@ -449,7 +449,7 @@ it('does not suggest users when either person has blocked the other', function (
         ->getJson('/api/v1/friends/suggestions')
         ->assertOk();
 
-    $ids = collect($response->json('data.items'))->pluck('id')->all();
+    $ids = collect($response->json('data'))->pluck('id')->all();
 
     expect($ids)
         ->toContain($stranger->id)
@@ -469,40 +469,27 @@ it('ranks friend suggestions by mutual friends', function (): void {
     $this->actingAs($me, 'sanctum')
         ->getJson('/api/v1/friends/suggestions')
         ->assertOk()
-        ->assertJsonPath('data.items.0.id', $mutual->id)
-        ->assertJsonPath('data.items.0.mutual_friends_count', 1)
-        ->assertJsonPath('data.items.1.id', $stranger->id)
-        ->assertJsonPath('data.items.1.mutual_friends_count', 0);
+        ->assertJsonPath('data.0.id', $mutual->id)
+        ->assertJsonPath('data.0.mutual_friends_count', 1)
+        ->assertJsonPath('data.1.id', $stranger->id)
+        ->assertJsonPath('data.1.mutual_friends_count', 0);
 });
 
-it('paginates friend suggestions with the standard envelope', function (): void {
+it('returns at most five friend suggestions without pagination', function (): void {
     $me = User::factory()->withRole(Roles::User)->create();
-    User::factory()->withRole(Roles::User)->count(3)->create();
+    User::factory()->withRole(Roles::User)->count(6)->create();
 
-    $firstPage = $this->actingAs($me, 'sanctum')
-        ->getJson('/api/v1/friends/suggestions?per_page=1')
+    $this->actingAs($me, 'sanctum')
+        ->getJson('/api/v1/friends/suggestions')
         ->assertOk()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.meta.per_page', 1)
-        ->assertJsonPath('data.meta.current_page', 1)
-        ->assertJsonPath('data.meta.total', 3)
-        ->assertJsonCount(1, 'data.items')
+        ->assertJsonCount(5, 'data')
+        ->assertJsonMissingPath('data.meta')
         ->assertJsonStructure([
             'success',
             'message',
             'data' => [
-                'items' => [
-                    '*' => ['id', 'name', 'username', 'avatar', 'mutual_friends_count'],
-                ],
-                'meta' => ['current_page', 'per_page', 'total', 'last_page', 'links'],
+                '*' => ['id', 'name', 'username', 'avatar', 'mutual_friends_count'],
             ],
         ]);
-
-    $secondPage = $this->actingAs($me, 'sanctum')
-        ->getJson('/api/v1/friends/suggestions?per_page=1&page=2')
-        ->assertOk()
-        ->assertJsonPath('data.meta.current_page', 2)
-        ->assertJsonCount(1, 'data.items');
-
-    expect($secondPage->json('data.items.0.id'))->not->toBe($firstPage->json('data.items.0.id'));
 });

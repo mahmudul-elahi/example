@@ -10,12 +10,14 @@ use App\Models\User;
 use App\Repositories\BlockedUserRepositoryInterface;
 use App\Repositories\FriendRequestRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class FriendRequestService implements FriendRequestServiceInterface
 {
+    private const int SUGGESTION_LIMIT = 5;
+
     public function __construct(
         protected FriendRequestRepositoryInterface $repository,
         protected BlockedUserRepositoryInterface $blockedUsers,
@@ -132,9 +134,9 @@ class FriendRequestService implements FriendRequestServiceInterface
         return $this->repository->paginateFriends($user, $perPage, $cursor);
     }
 
-    public function suggestions(User $user, int $perPage): LengthAwarePaginator
+    public function suggestions(User $user): Collection
     {
-        return $this->repository->paginateSuggestions($user, $perPage);
+        return $this->repository->suggestions($user, self::SUGGESTION_LIMIT);
     }
 
     /**
