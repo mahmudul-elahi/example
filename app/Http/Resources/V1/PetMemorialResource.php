@@ -34,6 +34,7 @@ class PetMemorialResource extends JsonResource
             'views_count' => $this->views_count,
             'comments_count' => $this->whenCounted('comments'),
             'likes_count' => $this->whenCounted('likes'),
+            'is_liked' => $request->user() !== null && $this->likes()->where('user_id', $request->user()->id)->exists(),
             'author' => new AuthorResource($this->whenLoaded('user')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
