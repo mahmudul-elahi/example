@@ -62,7 +62,7 @@ composer rector:dry          # preview automated refactors
 composer audit --abandoned=report  # check dependencies for vulnerabilities and abandoned packages
 ```
 
-See [FEATURES.md](FEATURES.md) for the product roadmap and feature catalogue.
+See [FEATURES.md](features/FEATURES.md) for the product roadmap and feature catalogue.
 
 ## License
 
