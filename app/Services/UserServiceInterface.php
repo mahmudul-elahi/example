@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Container\Attributes\Bind;
 use Illuminate\Container\Attributes\Scoped;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 
 #[Bind(UserService::class)]
 #[Scoped]
@@ -29,6 +30,8 @@ interface UserServiceInterface
      * @param  array<string, mixed>  $data
      */
     public function update(User $user, array $data): User;
+
+    public function updateAvatar(User $user, UploadedFile $avatar): User;
 
     public function delete(User $user, User $actor): void;
 }

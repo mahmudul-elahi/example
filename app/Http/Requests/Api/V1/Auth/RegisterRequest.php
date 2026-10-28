@@ -9,11 +9,6 @@ use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */

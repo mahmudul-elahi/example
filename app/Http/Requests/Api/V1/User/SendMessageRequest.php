@@ -12,11 +12,6 @@ use Illuminate\Validation\Rule;
 #[BodyParameter('audio_duration', required: false, type: 'integer')]
 class SendMessageRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, array<int, mixed>>
      */

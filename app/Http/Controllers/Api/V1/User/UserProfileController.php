@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\IndexPetMemorialRequest;
 use App\Http\Requests\Api\V1\User\IndexStoryRequest;
+use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
 use App\Http\Resources\V1\PetMemorialResource;
 use App\Http\Resources\V1\StoryResource;
 use App\Http\Resources\V1\UserResource;
@@ -60,5 +61,12 @@ class UserProfileController extends Controller
         $stories = $this->stories->forUser($user, $request->perPage(), $request->cursor());
 
         return $this->cursorPaginated($stories, StoryResource::collection($stories->items()), 'User stories');
+    }
+
+    public function updateAvatar(UpdateAvatarRequest $request, #[CurrentUser] User $currentUser): JsonResponse
+    {
+        $user = $this->userService->updateAvatar($currentUser, $request->avatar());
+
+        return $this->success(new UserResource($user), 'Profile image updated successfully');
     }
 }

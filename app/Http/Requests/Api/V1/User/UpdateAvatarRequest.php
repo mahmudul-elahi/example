@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Api\V1\User;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
+
+class UpdateAvatarRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return $this->user() !== null;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ];
+    }
+
+    public function avatar(): UploadedFile
+    {
+        /** @var UploadedFile $avatar */
+        $avatar = $this->file('avatar');
+
+        return $avatar;
+    }
+}

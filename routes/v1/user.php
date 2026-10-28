@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::post('users/{user}/block', [BlockedUserController::class, 'block']);
     Route::delete('users/{user}/block', [BlockedUserController::class, 'unblock']);
 
+    Route::post('profile/avatar', [UserProfileController::class, 'updateAvatar']);
     Route::get('users/{user}', [UserProfileController::class, 'show']);
     Route::get('users/{user}/memorials', [UserProfileController::class, 'memorials']);
     Route::get('users/{user}/stories', [UserProfileController::class, 'stories']);

@@ -126,6 +126,13 @@ class UserService implements UserServiceInterface
         return $user;
     }
 
+    public function updateAvatar(User $user, UploadedFile $avatar): User
+    {
+        return $this->update($user, [
+            'avatar' => $avatar,
+        ]);
+    }
+
     public function delete(User $user, User $actor): void
     {
         if ($user->id === $actor->id) {

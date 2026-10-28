@@ -10,6 +10,8 @@ use App\Models\PetMemorial;
 use App\Models\Story;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -236,4 +238,109 @@ it('returns 404 for stories when users are blocked', function (): void {
     $this->actingAs($viewer, 'sanctum')
         ->getJson("/api/v1/users/{$target->id}/stories")
         ->assertNotFound();
+});
+
+it('requires authentication to update profile image', function (): void {
+    $this->postJson('/api/v1/profile/avatar', [
+        'avatar' => UploadedFile::fake()->image('avatar.jpg'),
+    ])->assertUnauthorized();
+});
+
+it('updates user profile image via POST profile/avatar', function (): void {
+    Storage::fake();
+
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    $response = $this->actingAs($user, 'sanctum')
+        ->postJson('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('my-avatar.jpg'),
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Profile image updated successfully')
+        ->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                'id',
+                'name',
+                'username',
+                'email',
+                'avatar',
+                'role',
+            ],
+        ]);
+
+    $freshUser = $user->fresh();
+    expect($freshUser->avatar)->not->toBeNull();
+    Storage::assertExists($freshUser->avatar);
+    $response->assertJsonPath('data.avatar', Storage::url($freshUser->avatar));
+});
+
+it('replaces the previous avatar file when updated', function (): void {
+    Storage::fake();
+
+    $user = User::factory()->withRole(Roles::User)->withAvatar('avatars/old-pic.jpg')->create();
+    Storage::put('avatars/old-pic.jpg', 'old-content');
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('new-pic.jpg'),
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $freshUser = $user->fresh();
+    expect($freshUser->avatar)->not->toBe('avatars/old-pic.jpg');
+    Storage::assertMissing('avatars/old-pic.jpg');
+    Storage::assertExists($freshUser->avatar);
+});
+
+it('rejects an avatar that is not an image file', function (): void {
+    Storage::fake();
+
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->create('document.pdf', 10),
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonStructure(['success', 'message', 'errors']);
+});
+
+it('rejects when no avatar is provided', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/v1/profile/avatar', [])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonStructure(['success', 'message', 'errors']);
+});
+
+it('only updates avatar and ignores any attempts to change name, email, or role', function (): void {
+    Storage::fake();
+
+    $user = User::factory()->withRole(Roles::User)->create([
+        'name' => 'Original Name',
+        'email' => 'original@example.com',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('pic.jpg'),
+            'name' => 'Hacked Name',
+            'email' => 'hacked@example.com',
+            'role' => Roles::Admin->value,
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $freshUser = $user->fresh();
+    expect($freshUser->name)->toBe('Original Name')
+        ->and($freshUser->email)->toBe('original@example.com')
+        ->and($freshUser->isAdmin())->toBeFalse()
+        ->and($freshUser->avatar)->not->toBeNull();
 });
