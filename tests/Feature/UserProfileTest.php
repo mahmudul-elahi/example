@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-it('returns profile counts and badge for the authenticated user on auth/me', function (): void {
+it('returns user badge on auth/me without stats counts', function (): void {
     $user = User::factory()->withRole(Roles::User)->create([
         'username' => 'pet_lover',
     ]);
@@ -40,9 +40,40 @@ it('returns profile counts and badge for the authenticated user on auth/me', fun
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.username', 'pet_lover')
         ->assertJsonPath('data.badge', 'Pet Guardian')
+        ->assertJsonMissingPath('data.memorials_count')
+        ->assertJsonMissingPath('data.comments_count')
+        ->assertJsonMissingPath('data.likes_count');
+});
+
+it('returns user stats counts on profile/stats', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    PetMemorial::factory()->for($user)->count(2)->create();
+    PetMemorial::factory()->for($user)->draft()->create();
+    PetMemorial::factory()->for($user)->private()->create();
+
+    $memorial = PetMemorial::factory()->create();
+    Comment::factory()->for($user)->create([
+        'commentable_type' => PetMemorial::class,
+        'commentable_id' => $memorial->id,
+    ]);
+    Like::factory()->for($user)->create([
+        'likeable_type' => PetMemorial::class,
+        'likeable_id' => $memorial->id,
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->getJson('/api/v1/profile/stats')
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'User stats retrieved successfully')
         ->assertJsonPath('data.memorials_count', 4)
         ->assertJsonPath('data.comments_count', 1)
         ->assertJsonPath('data.likes_count', 1);
+});
+
+it('requires authentication to view profile stats', function (): void {
+    $this->getJson('/api/v1/profile/stats')->assertUnauthorized();
 });
 
 it('returns Administrator badge for admin user on auth/me', function (): void {
@@ -86,7 +117,6 @@ it('shows another user profile by numeric id', function (): void {
         ->assertJsonPath('data.name', 'Sarah Connor')
         ->assertJsonPath('data.username', 'sarah_c')
         ->assertJsonPath('data.badge', 'Pet Guardian')
-        ->assertJsonPath('data.memorials_count', 2)
         ->assertJsonStructure([
             'success',
             'message',
@@ -101,9 +131,6 @@ it('shows another user profile by numeric id', function (): void {
                 'email_verified',
                 'created_at',
                 'updated_at',
-                'memorials_count',
-                'likes_count',
-                'comments_count',
             ],
         ]);
 });
@@ -125,21 +152,6 @@ it('resolves user profile by username and with @ prefix', function (): void {
         ->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.id', $target->id);
-});
-
-it('lets an admin viewer see all memorials count for another user', function (): void {
-    $admin = User::factory()->withRole(Roles::Admin)->create();
-    $target = User::factory()->withRole(Roles::User)->create();
-
-    PetMemorial::factory()->for($target)->count(2)->create();
-    PetMemorial::factory()->for($target)->draft()->create();
-    PetMemorial::factory()->for($target)->private()->create();
-
-    $this->actingAs($admin, 'sanctum')
-        ->getJson("/api/v1/users/{$target->id}")
-        ->assertOk()
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('data.memorials_count', 4);
 });
 
 it('returns 404 when viewing a blocked user profile', function (): void {

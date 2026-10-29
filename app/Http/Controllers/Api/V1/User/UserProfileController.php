@@ -11,6 +11,7 @@ use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
 use App\Http\Resources\V1\PetMemorialResource;
 use App\Http\Resources\V1\StoryResource;
 use App\Http\Resources\V1\UserResource;
+use App\Http\Resources\V1\UserStatsResource;
 use App\Models\User;
 use App\Services\BlockedUserServiceInterface;
 use App\Services\PetMemorialServiceInterface;
@@ -68,5 +69,12 @@ class UserProfileController extends Controller
         $user = $this->userService->updateAvatar($currentUser, $request->avatar());
 
         return $this->success(new UserResource($user), 'Profile image updated successfully');
+    }
+
+    public function stats(#[CurrentUser] User $currentUser): JsonResponse
+    {
+        $stats = $this->userService->getStats($currentUser);
+
+        return $this->success(new UserStatsResource($stats), 'User stats retrieved successfully');
     }
 }
