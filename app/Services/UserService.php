@@ -35,6 +35,14 @@ class UserService implements UserServiceInterface
     }
 
     /**
+     * @return array{memorials_count: int, likes_count: int, comments_count: int}
+     */
+    public function getStats(User $user): array
+    {
+        return $this->repository->getStats($user);
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): User

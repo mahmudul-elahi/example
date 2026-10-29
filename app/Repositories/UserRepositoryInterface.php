@@ -38,6 +38,11 @@ interface UserRepositoryInterface
 
     public function loadRoles(User $user): User;
 
+    /**
+     * @return array{memorials_count: int, likes_count: int, comments_count: int}
+     */
+    public function getStats(User $user): array;
+
     public function getProfile(User $user, ?User $viewer = null): User;
 
     public function updatePassword(User $user, string $password): void;

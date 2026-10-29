@@ -70,20 +70,24 @@ class UserRepository implements UserRepositoryInterface
 
     public function loadRoles(User $user): User
     {
-        return $user->load('roles')
-            ->loadCount(['petMemorials', 'likes', 'comments']);
+        return $user->load('roles');
+    }
+
+    /**
+     * @return array{memorials_count: int, likes_count: int, comments_count: int}
+     */
+    public function getStats(User $user): array
+    {
+        return [
+            'memorials_count' => $user->petMemorials()->count(),
+            'likes_count' => $user->likes()->count(),
+            'comments_count' => $user->comments()->count(),
+        ];
     }
 
     public function getProfile(User $user, ?User $viewer = null): User
     {
-        $isOwnerOrAdmin = $viewer instanceof User && ($viewer->id === $user->id || $viewer->isAdmin());
-
-        return $user->load('roles')
-            ->loadCount([
-                'petMemorials' => fn ($query) => $isOwnerOrAdmin ? $query : $query->publiclyVisible(),
-                'likes',
-                'comments',
-            ]);
+        return $user->load('roles');
     }
 
     public function updatePassword(User $user, string $password): void
