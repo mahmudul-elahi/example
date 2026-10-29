@@ -26,4 +26,3 @@ class PetMemorialImageFactory extends Factory
         ];
     }
 }
-

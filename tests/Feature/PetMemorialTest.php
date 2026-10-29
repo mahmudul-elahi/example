@@ -362,3 +362,24 @@ it('allows uploading additional images when updating a memorial', function (): v
 
     expect($memorial->refresh()->images)->toHaveCount(2);
 });
+
+it('updates a memorial using direct POST with multipart images', function (): void {
+    Storage::fake();
+
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $memorial = PetMemorial::factory()->forUser($owner)->create();
+
+    $this->actingAs($owner, 'sanctum')
+        ->post("/api/v1/memorials/{$memorial->slug}", [
+            'body' => 'Direct post update.',
+            'images' => [
+                UploadedFile::fake()->image('direct.jpg'),
+            ],
+        ], ['Accept' => 'application/json'])
+        ->assertOk()
+        ->assertJsonPath('data.body', 'Direct post update.')
+        ->assertJsonCount(1, 'data.images');
+
+    expect($memorial->refresh()->body)->toBe('Direct post update.')
+        ->and($memorial->images)->toHaveCount(1);
+});

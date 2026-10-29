@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
     Route::get('memorials/mine', [PetMemorialController::class, 'mine']);
     Route::apiResource('memorials', PetMemorialController::class)->except(['show']);
+    Route::post('memorials/{memorial}', [PetMemorialController::class, 'update']);
 
     Route::get('memorials/{memorial}/comments', [CommentController::class, 'indexMemorial']);
     Route::post('memorials/{memorial}/comments', [CommentController::class, 'storeMemorial']);

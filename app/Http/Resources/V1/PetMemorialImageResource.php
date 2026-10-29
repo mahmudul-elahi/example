@@ -26,4 +26,3 @@ class PetMemorialImageResource extends JsonResource
         ];
     }
 }
-

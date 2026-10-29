@@ -47,4 +47,3 @@ class PetMemorialImage extends Model
         return $this->belongsTo(PetMemorial::class);
     }
 }
-
