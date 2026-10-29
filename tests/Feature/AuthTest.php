@@ -142,6 +142,20 @@ it('blocks unauthenticated access to the profile', function (): void {
         ->assertJsonPath('success', false);
 });
 
+it('returns json when an unauthenticated request has a broad accept header', function (): void {
+    $this->get('/api/v1/auth/me', ['Accept' => '*/*'])
+        ->assertUnauthorized()
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'Unauthenticated.');
+});
+
+it('returns json when an unauthenticated browser accepts html', function (): void {
+    $this->get('/api/v1/auth/me', ['Accept' => 'text/html,application/xhtml+xml'])
+        ->assertUnauthorized()
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'Unauthenticated.');
+});
+
 it('logs out and revokes the issued token', function (): void {
     User::factory()->create([
         'email' => 'jane@example.com',

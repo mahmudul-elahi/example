@@ -122,6 +122,16 @@ it('gates admin routes until the admin email is verified', function (): void {
         ->assertJsonPath('message', 'Your email address is not verified.');
 });
 
+it('returns json when an unverified request has a broad accept header', function (): void {
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->get('/api/v1/friend-requests', ['Accept' => '*/*'])
+        ->assertForbidden()
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'Your email address is not verified.');
+});
+
 it('exposes the verification status without blocking the profile', function (): void {
     $user = User::factory()->unverified()->create();
 

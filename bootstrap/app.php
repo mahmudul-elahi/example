@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(null);
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
@@ -60,4 +62,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return response()->json($payload, $status);
         });
-    })->create();
+    })
+    ->prefersJsonResponses()
+    ->create();
