@@ -15,14 +15,13 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @property-read int $id
@@ -33,7 +32,6 @@ use Illuminate\Support\Facades\Storage;
  * @property-read PetType|null $pet_type
  * @property-read Carbon|null $pet_born_at
  * @property-read Carbon|null $pet_passed_at
- * @property-read string|null $cover_image
  * @property-read PostStatus $status
  * @property-read VisibilityStatus $visibility
  * @property-read int $views_count
@@ -46,7 +44,6 @@ use Illuminate\Support\Facades\Storage;
     'pet_type',
     'pet_born_at',
     'pet_passed_at',
-    'cover_image',
     'status',
     'visibility',
     'views_count',
@@ -90,15 +87,11 @@ class PetMemorial extends Model
     }
 
     /**
-     * The absolute URL of the memorial's cover image, or null when none is set.
-     *
-     * @return Attribute<string|null, never>
+     * @return HasMany<PetMemorialImage, $this>
      */
-    protected function coverImageUrl(): Attribute
+    public function images(): HasMany
     {
-        return Attribute::make(
-            get: fn (): ?string => $this->cover_image === null ? null : Storage::url($this->cover_image),
-        );
+        return $this->hasMany(PetMemorialImage::class);
     }
 
     /**

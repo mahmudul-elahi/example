@@ -8,6 +8,7 @@ use App\Enums\PetType;
 use App\Enums\PostStatus;
 use App\Enums\VisibilityStatus;
 use App\Models\PetMemorial;
+use App\Models\PetMemorialImage;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -32,11 +33,15 @@ class PetMemorialFactory extends Factory
             'pet_type' => fake()->randomElement(PetType::cases()),
             'pet_born_at' => $born,
             'pet_passed_at' => fake()->dateTimeBetween($born, 'now'),
-            'cover_image' => null,
             'status' => PostStatus::Published,
             'visibility' => VisibilityStatus::Public,
             'views_count' => 0,
         ];
+    }
+
+    public function withImages(int $count = 2): static
+    {
+        return $this->has(PetMemorialImage::factory()->count($count), 'images');
     }
 
     public function draft(): static

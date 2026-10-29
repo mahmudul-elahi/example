@@ -10,8 +10,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @mixin PetMemorial
- *
- * @property string|null $cover_image_url
  */
 class PetMemorialResource extends JsonResource
 {
@@ -28,7 +26,7 @@ class PetMemorialResource extends JsonResource
             'pet_type' => $this->pet_type?->value,
             'pet_born_at' => $this->pet_born_at?->toDateString(),
             'pet_passed_at' => $this->pet_passed_at?->toDateString(),
-            'cover_image' => $this->cover_image_url,
+            'images' => PetMemorialImageResource::collection($this->whenLoaded('images')),
             'status' => $this->status->value,
             'visibility' => $this->visibility->value,
             'views_count' => $this->views_count,

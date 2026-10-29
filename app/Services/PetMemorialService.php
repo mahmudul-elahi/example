@@ -10,7 +10,6 @@ use App\Repositories\PetMemorialRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class PetMemorialService implements PetMemorialServiceInterface
 {
@@ -61,9 +60,17 @@ class PetMemorialService implements PetMemorialServiceInterface
     public function create(User $author, array $data): PetMemorial
     {
         $data['user_id'] = $author->id;
-        $data['cover_image'] = $this->storeCoverImage($data['cover_image'] ?? null);
+        /** @var array<int, mixed> $images */
+        $images = $data['images'] ?? [];
+        unset($data['images']);
 
-        return $this->repository->create($data);
+        $memorial = $this->repository->create($data);
+
+        if (! empty($images)) {
+            $this->storeImages($memorial, $images);
+        }
+
+        return $memorial;
     }
 
     /**
@@ -71,16 +78,14 @@ class PetMemorialService implements PetMemorialServiceInterface
      */
     public function update(PetMemorial $memorial, array $data): PetMemorial
     {
-        $obsoleteCover = array_key_exists('cover_image', $data) ? $memorial->cover_image : null;
-
-        if (array_key_exists('cover_image', $data)) {
-            $data['cover_image'] = $this->storeCoverImage($data['cover_image']);
-        }
+        /** @var array<int, mixed>|null $images */
+        $images = $data['images'] ?? null;
+        unset($data['images']);
 
         $memorial = $this->repository->update($memorial, $data);
 
-        if ($obsoleteCover !== null) {
-            Storage::delete($obsoleteCover);
+        if (is_array($images) && ! empty($images)) {
+            $this->storeImages($memorial, $images);
         }
 
         return $memorial;
@@ -97,14 +102,17 @@ class PetMemorialService implements PetMemorialServiceInterface
     }
 
     /**
-     * Store an uploaded cover image on the default disk, or clear the value.
+     * Store uploaded memorial images on the default disk.
+     *
+     * @param  array<int, mixed>  $images
      */
-    private function storeCoverImage(mixed $cover): ?string
+    private function storeImages(PetMemorial $memorial, array $images): void
     {
-        if ($cover instanceof UploadedFile) {
-            return $cover->store('memorials');
+        foreach ($images as $image) {
+            if ($image instanceof UploadedFile) {
+                $path = $image->store('memorials');
+                $memorial->images()->create(['path' => $path]);
+            }
         }
-
-        return is_string($cover) ? $cover : null;
     }
 }

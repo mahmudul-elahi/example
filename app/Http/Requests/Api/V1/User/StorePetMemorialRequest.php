@@ -31,7 +31,8 @@ class StorePetMemorialRequest extends FormRequest
             'pet_type' => ['sometimes', 'nullable', 'string', Rule::in(PetType::values())],
             'pet_born_at' => ['sometimes', 'nullable', 'date'],
             'pet_passed_at' => ['sometimes', 'nullable', 'date'],
-            'cover_image' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images' => ['sometimes', 'array'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['sometimes', 'string', Rule::in([PostStatus::Draft->value, PostStatus::Published->value])],
             'visibility' => ['sometimes', 'string', Rule::in(VisibilityStatus::values())],
         ];

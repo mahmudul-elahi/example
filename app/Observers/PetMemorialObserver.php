@@ -38,16 +38,21 @@ class PetMemorialObserver
     }
 
     /**
-     * Handle the PetMemorial "force deleted" event. The record is gone for
-     * good, so its cover image goes with it. Soft deletes keep the file so a
-     * restore cannot end up with a broken image URL.
+     * Handle the PetMemorial "force deleting" event. Clean up image files
+     * before database cascades remove the child records.
+     */
+    public function forceDeleting(PetMemorial $memorial): void
+    {
+        foreach ($memorial->images as $image) {
+            Storage::delete($image->path);
+        }
+    }
+
+    /**
+     * Handle the PetMemorial "force deleted" event.
      */
     public function forceDeleted(PetMemorial $memorial): void
     {
-        if ($memorial->cover_image !== null) {
-            Storage::delete($memorial->cover_image);
-        }
-
         $this->invalidate();
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\PostStatus;
 use App\Enums\Roles;
 use App\Models\PetMemorial;
+use App\Models\PetMemorialImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -158,7 +159,10 @@ it('creates a memorial for the authenticated user', function (): void {
             'body' => 'A loving companion.',
             'pet_name' => 'Bella',
             'pet_type' => 'dog',
-            'cover_image' => UploadedFile::fake()->image('bella.jpg'),
+            'images' => [
+                UploadedFile::fake()->image('bella1.jpg'),
+                UploadedFile::fake()->image('bella2.jpg'),
+            ],
         ], ['Accept' => 'application/json'])
         ->assertCreated()
         ->assertJsonPath('success', true)
@@ -166,7 +170,8 @@ it('creates a memorial for the authenticated user', function (): void {
         ->assertJsonPath('data.slug', 'bella')
         ->assertJsonPath('data.pet_type', 'dog')
         ->assertJsonPath('data.status', PostStatus::Published->value)
-        ->assertJsonPath('data.visibility', 'public');
+        ->assertJsonPath('data.visibility', 'public')
+        ->assertJsonCount(2, 'data.images');
 
     $this->assertDatabaseHas('pet_memorials', [
         'pet_name' => 'Bella',
@@ -174,7 +179,11 @@ it('creates a memorial for the authenticated user', function (): void {
     ]);
 
     $memorial = PetMemorial::query()->where('pet_name', 'Bella')->firstOrFail();
-    Storage::assertExists($memorial->cover_image);
+    expect($memorial->images)->toHaveCount(2);
+
+    foreach ($memorial->images as $image) {
+        Storage::assertExists($image->path);
+    }
 });
 
 it('rejects invalid input when creating a memorial', function (): void {
@@ -245,22 +254,27 @@ it('lets the owner delete their memorial', function (): void {
     $this->assertSoftDeleted('pet_memorials', ['id' => $memorial->id]);
 });
 
-it('keeps a memorial cover image on soft delete and removes it on force delete', function (): void {
+it('keeps memorial images on soft delete and removes them on force delete', function (): void {
     Storage::fake();
 
     $owner = User::factory()->withRole(Roles::User)->create();
-    $memorial = PetMemorial::factory()->forUser($owner)->create(['cover_image' => 'covers/bella.jpg']);
-    Storage::put('covers/bella.jpg', 'image');
+    $memorial = PetMemorial::factory()->forUser($owner)->create();
+    PetMemorialImage::factory()->create(['pet_memorial_id' => $memorial->id, 'path' => 'memorials/bella1.jpg']);
+    PetMemorialImage::factory()->create(['pet_memorial_id' => $memorial->id, 'path' => 'memorials/bella2.jpg']);
+    Storage::put('memorials/bella1.jpg', 'image');
+    Storage::put('memorials/bella2.jpg', 'image');
 
     $this->actingAs($owner, 'sanctum')
         ->deleteJson("/api/v1/memorials/{$memorial->slug}")
         ->assertOk();
 
-    Storage::assertExists('covers/bella.jpg');
+    Storage::assertExists('memorials/bella1.jpg');
+    Storage::assertExists('memorials/bella2.jpg');
 
     $memorial->forceDelete();
 
-    Storage::assertMissing('covers/bella.jpg');
+    Storage::assertMissing('memorials/bella1.jpg');
+    Storage::assertMissing('memorials/bella2.jpg');
 });
 
 it('forbids another user from deleting a memorial', function (): void {
@@ -311,4 +325,40 @@ it('accepts a pet passed date on or after the stored pet born date', function ()
         ->putJson("/api/v1/memorials/{$memorial->slug}", ['pet_passed_at' => '2023-06-01'])
         ->assertOk()
         ->assertJsonPath('data.pet_passed_at', '2023-06-01');
+});
+
+it('returns images array when showing a memorial', function (): void {
+    $memorial = PetMemorial::factory()->create();
+    $image = PetMemorialImage::factory()->create([
+        'pet_memorial_id' => $memorial->id,
+        'path' => 'memorials/test.jpg',
+    ]);
+
+    $this->getJson("/api/v1/memorials/{$memorial->slug}")
+        ->assertOk()
+        ->assertJsonPath('data.images.0.id', $image->id)
+        ->assertJsonPath('data.images.0.url', Storage::url('memorials/test.jpg'));
+});
+
+it('allows uploading additional images when updating a memorial', function (): void {
+    Storage::fake();
+
+    $owner = User::factory()->withRole(Roles::User)->create();
+    $memorial = PetMemorial::factory()->forUser($owner)->create();
+    PetMemorialImage::factory()->create([
+        'pet_memorial_id' => $memorial->id,
+        'path' => 'memorials/existing.jpg',
+    ]);
+
+    $this->actingAs($owner, 'sanctum')
+        ->post("/api/v1/memorials/{$memorial->slug}", [
+            '_method' => 'PUT',
+            'images' => [
+                UploadedFile::fake()->image('new.jpg'),
+            ],
+        ], ['Accept' => 'application/json'])
+        ->assertOk()
+        ->assertJsonCount(2, 'data.images');
+
+    expect($memorial->refresh()->images)->toHaveCount(2);
 });

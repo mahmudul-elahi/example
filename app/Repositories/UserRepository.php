@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Enums\Roles;
+use App\Models\PetMemorialImage;
 use App\Models\User;
 use DateTimeInterface;
 use Illuminate\Contracts\Database\Query\Builder;
@@ -60,7 +61,10 @@ class UserRepository implements UserRepositoryInterface
     {
         $images = [
             ...$user->blogPosts()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
-            ...$user->petMemorials()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
+            ...PetMemorialImage::query()
+                ->whereIn('pet_memorial_id', $user->petMemorials()->withTrashed()->select('id'))
+                ->pluck('path')
+                ->all(),
             ...$user->products()->withTrashed()->whereNotNull('cover_image')->pluck('cover_image')->all(),
             ...$user->stories()->whereNotNull('media_path')->pluck('media_path')->all(),
         ];

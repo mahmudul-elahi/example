@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\Roles;
 use App\Models\BlogPost;
 use App\Models\PetMemorial;
+use App\Models\PetMemorialImage;
 use App\Models\Product;
 use App\Models\Story;
 use App\Models\User;
@@ -464,13 +465,17 @@ it('deletes the cover images of the content the user authored', function (): voi
     $admin = User::factory()->withRole(Roles::Admin)->create();
     $user = User::factory()->withRole(Roles::User)->create();
     $post = BlogPost::factory()->forUser($user)->create(['cover_image' => 'blog/cover.jpg']);
-    $memorial = PetMemorial::factory()->forUser($user)->create(['cover_image' => 'memorials/cover.jpg']);
+    $memorial = PetMemorial::factory()->forUser($user)->create();
+    PetMemorialImage::factory()->create([
+        'pet_memorial_id' => $memorial->id,
+        'path' => 'memorials/image.jpg',
+    ]);
     $product = Product::factory()->forUser($user)->create(['cover_image' => 'products/cover.jpg']);
     $story = Story::factory()->for($user)->create(['media_path' => 'stories/media.jpg']);
     $trashedPost = BlogPost::factory()->forUser($user)->create(['cover_image' => 'blog/trashed.jpg']);
     $trashedPost->delete();
 
-    foreach (['blog/cover.jpg', 'memorials/cover.jpg', 'products/cover.jpg', 'blog/trashed.jpg', 'stories/media.jpg'] as $path) {
+    foreach (['blog/cover.jpg', 'memorials/image.jpg', 'products/cover.jpg', 'blog/trashed.jpg', 'stories/media.jpg'] as $path) {
         Storage::put($path, 'image');
     }
 
@@ -479,7 +484,7 @@ it('deletes the cover images of the content the user authored', function (): voi
         ->assertOk();
 
     Storage::assertMissing('blog/cover.jpg');
-    Storage::assertMissing('memorials/cover.jpg');
+    Storage::assertMissing('memorials/image.jpg');
     Storage::assertMissing('products/cover.jpg');
     Storage::assertMissing('blog/trashed.jpg');
     Storage::assertMissing('stories/media.jpg');

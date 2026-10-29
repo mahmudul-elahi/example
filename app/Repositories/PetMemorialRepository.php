@@ -20,7 +20,7 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
         $perPage = min(max($perPage, 1), 100);
 
         return PetMemorial::query()
-            ->with('user')
+            ->with(['user', 'images'])
             ->withCount(['comments', 'likes'])
             ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
             ->when($search, function (Builder $query, string $search): void {
@@ -41,7 +41,7 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
         $perPage = min(max($perPage, 1), 100);
 
         return PetMemorial::query()
-            ->with('user')
+            ->with(['user', 'images'])
             ->withCount(['comments', 'likes'])
             ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
             ->when($search, function (Builder $query, string $search): void {
@@ -64,7 +64,7 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
         return PetMemorial::query()
             ->where('user_id', $user->id)
             ->when($publicOnly, fn (Builder $query): Builder => $query->publiclyVisible())
-            ->with('user')
+            ->with(['user', 'images'])
             ->withCount(['comments', 'likes'])
             ->when($search, function (Builder $query, string $search): void {
                 $query->where(function (Builder $q) use ($search): void {
@@ -79,7 +79,7 @@ class PetMemorialRepository implements PetMemorialRepositoryInterface
     public function find(int $id): PetMemorial
     {
         return PetMemorial::query()
-            ->with('user')
+            ->with(['user', 'images'])
             ->withCount(['comments', 'likes'])
             ->findOrFail($id);
     }
