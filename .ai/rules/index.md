@@ -6,7 +6,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/** | .ai/rules/app.md |
 | bootstrap/** | .ai/rules/bootstrap.md |
-| config/responsecache.php | .ai/rules/config.md |
+| config/** | .ai/rules/config.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Enums/** | .ai/rules/enums.md |
 | ** | .ai/rules/general.md |

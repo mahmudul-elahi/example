@@ -114,3 +114,17 @@ public function rules(): array
     ];
 }
 ```
+
+## Image upload validation
+Do not impose arbitrary file size limits (such as `max:2048` or `max:5120`) in Form Requests for image uploads. File compression and downscaling are handled automatically by the service layer. Validate mime types only:
+
+```php
+'avatar' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp'],
+```
+
+For multi-image uploads (e.g., gallery posts), validate the array and individual files:
+
+```php
+'images' => ['sometimes', 'array'],
+'images.*' => ['image', 'mimes:jpg,jpeg,png,webp'],
+```

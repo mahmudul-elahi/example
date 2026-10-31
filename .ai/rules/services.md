@@ -86,3 +86,24 @@ class PostService implements PostServiceInterface
     }
 }
 ```
+
+## Process and optimize images with Laravel's Image facade
+Always optimize user-uploaded images using Laravel's built-in `Illuminate\Support\Facades\Image` facade before storing them on disk. Always scale down oversized dimensions (such as 48MP smartphone photos) to prevent memory bloat and convert to WebP:
+
+```php
+use Illuminate\Support\Facades\Image;
+
+// Content covers and gallery images (e.g. memorials, blog, products):
+$path = Image::fromUpload($file)
+    ->scale(width: 2560)
+    ->optimize()
+    ->store('memorials');
+
+// User avatars:
+$path = Image::fromUpload($file)
+    ->scale(width: 1024)
+    ->optimize()
+    ->store('avatars');
+```
+
+Never store raw unoptimized images directly.

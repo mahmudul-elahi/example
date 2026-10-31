@@ -136,3 +136,11 @@ Route::post('login', [AuthController::class, 'login'])->middleware('throttle:log
 ```
 
 A throttled request returns 429 in the standard error envelope. Raise the limit env vars when load/stress testing, which otherwise stops at the per-minute cap.
+
+## Direct POST routes for updates with file uploads
+PHP only populates `$_FILES` and parses `multipart/form-data` natively on HTTP `POST` requests. When a resource allows updating with file/image uploads, register an explicit direct `POST` route alongside the resource route so clients can upload files directly without needing `_method` spoofing:
+
+```php
+Route::apiResource('memorials', PetMemorialController::class)->except(['show']);
+Route::post('memorials/{memorial}', [PetMemorialController::class, 'update']);
+```
