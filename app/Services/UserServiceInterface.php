@@ -36,7 +36,14 @@ interface UserServiceInterface
      */
     public function update(User $user, array $data): User;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateProfile(User $user, array $data): User;
+
     public function updateAvatar(User $user, UploadedFile $avatar): User;
+
+    public function changePassword(User $user, string $newPassword): void;
 
     public function delete(User $user, User $actor): void;
 }

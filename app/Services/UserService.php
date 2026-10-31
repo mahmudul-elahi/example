@@ -10,6 +10,7 @@ use App\Repositories\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -17,6 +18,7 @@ class UserService implements UserServiceInterface
 {
     public function __construct(
         protected UserRepositoryInterface $repository,
+        protected EmailVerificationServiceInterface $emailVerification,
     ) {}
 
     public function getUsers(int $perPage = 15, ?string $search = null, ?Roles $role = null): LengthAwarePaginator
@@ -55,7 +57,11 @@ class UserService implements UserServiceInterface
             unset($data['email_verified']);
 
             if (($data['avatar'] ?? null) instanceof UploadedFile) {
-                $data['avatar'] = $data['avatar']->store('avatars');
+                $path = Image::fromUpload($data['avatar'])
+                    ->scale(width: 1024)
+                    ->optimize()
+                    ->store('avatars');
+                $data['avatar'] = $path !== false ? $path : null;
             }
 
             $user = $this->repository->create($data);
@@ -109,7 +115,10 @@ class UserService implements UserServiceInterface
 
             if (array_key_exists('avatar', $data)) {
                 $avatar = $data['avatar'];
-                $data['avatar'] = $avatar instanceof UploadedFile ? $avatar->store('avatars') : null;
+                $path = $avatar instanceof UploadedFile
+                    ? Image::fromUpload($avatar)->scale(width: 1024)->optimize()->store('avatars')
+                    : null;
+                $data['avatar'] = $path !== false ? $path : null;
             }
 
             if ($data !== []) {
@@ -139,6 +148,35 @@ class UserService implements UserServiceInterface
         return $this->update($user, [
             'avatar' => $avatar,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateProfile(User $user, array $data): User
+    {
+        $filtered = array_intersect_key($data, array_flip(['name', 'username', 'email']));
+        $emailChanged = isset($filtered['email']) && $filtered['email'] !== $user->email;
+
+        $updatedUser = $this->update($user, $filtered);
+
+        if ($emailChanged) {
+            $this->emailVerification->sendOtp($updatedUser);
+        }
+
+        return $updatedUser;
+    }
+
+    public function changePassword(User $user, string $newPassword): void
+    {
+        DB::transaction(function () use ($user, $newPassword): void {
+            $this->repository->updatePassword($user, $newPassword);
+
+            $currentTokenId = $user->currentAccessToken()?->id;
+            if ($currentTokenId !== null) {
+                $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+            }
+        });
     }
 
     public function delete(User $user, User $actor): void
