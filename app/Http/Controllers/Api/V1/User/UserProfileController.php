@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\User\ChangePasswordRequest;
 use App\Http\Requests\Api\V1\User\IndexPetMemorialRequest;
 use App\Http\Requests\Api\V1\User\IndexStoryRequest;
 use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
+use App\Http\Requests\Api\V1\User\UpdateProfileRequest;
 use App\Http\Resources\V1\PetMemorialResource;
 use App\Http\Resources\V1\StoryResource;
 use App\Http\Resources\V1\UserResource;
@@ -64,11 +66,30 @@ class UserProfileController extends Controller
         return $this->cursorPaginated($stories, StoryResource::collection($stories->items()), 'User stories');
     }
 
+    public function profile(#[CurrentUser] User $currentUser): JsonResponse
+    {
+        return $this->success(new UserResource($currentUser));
+    }
+
+    public function update(UpdateProfileRequest $request, #[CurrentUser] User $currentUser): JsonResponse
+    {
+        $user = $this->userService->updateProfile($currentUser, $request->validated());
+
+        return $this->success(new UserResource($user), 'Profile updated successfully');
+    }
+
     public function updateAvatar(UpdateAvatarRequest $request, #[CurrentUser] User $currentUser): JsonResponse
     {
         $user = $this->userService->updateAvatar($currentUser, $request->avatar());
 
         return $this->success(new UserResource($user), 'Profile image updated successfully');
+    }
+
+    public function updatePassword(ChangePasswordRequest $request, #[CurrentUser] User $currentUser): JsonResponse
+    {
+        $this->userService->changePassword($currentUser, $request->newPassword());
+
+        return $this->success(null, 'Password updated successfully');
     }
 
     public function stats(#[CurrentUser] User $currentUser): JsonResponse

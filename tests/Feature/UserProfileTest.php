@@ -9,8 +9,10 @@ use App\Models\Like;
 use App\Models\PetMemorial;
 use App\Models\Story;
 use App\Models\User;
+use App\Notifications\Auth\EmailVerificationOtpNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -355,4 +357,217 @@ it('only updates avatar and ignores any attempts to change name, email, or role'
         ->and($freshUser->email)->toBe('original@example.com')
         ->and($freshUser->isAdmin())->toBeFalse()
         ->and($freshUser->avatar)->not->toBeNull();
+});
+
+it('requires authentication to change password', function (): void {
+    $this->putJson('/api/v1/profile/password', [
+        'current_password' => 'old-password',
+        'password' => 'new-password-123',
+        'password_confirmation' => 'new-password-123',
+    ])->assertUnauthorized();
+});
+
+it('changes password successfully with valid current password and confirmation', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'old-secret-password',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile/password', [
+            'current_password' => 'old-secret-password',
+            'password' => 'new-secret-password',
+            'password_confirmation' => 'new-secret-password',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Password updated successfully')
+        ->assertJsonPath('data', null);
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => $user->email,
+        'password' => 'new-secret-password',
+    ])->assertOk();
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => $user->email,
+        'password' => 'old-secret-password',
+    ])->assertUnprocessable();
+});
+
+it('rejects changing password with wrong current password', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'correct-password',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile/password', [
+            'current_password' => 'wrong-password',
+            'password' => 'new-secret-password',
+            'password_confirmation' => 'new-secret-password',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors(['current_password']);
+});
+
+it('rejects changing password when new password is the same as current password', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'same-password-123',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile/password', [
+            'current_password' => 'same-password-123',
+            'password' => 'same-password-123',
+            'password_confirmation' => 'same-password-123',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors(['password']);
+});
+
+it('rejects changing password when password confirmation does not match', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'old-secret-password',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile/password', [
+            'current_password' => 'old-secret-password',
+            'password' => 'new-secret-password',
+            'password_confirmation' => 'different-password',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors(['password']);
+});
+
+it('rejects changing password when new password is shorter than 8 characters', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'old-secret-password',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile/password', [
+            'current_password' => 'old-secret-password',
+            'password' => 'short',
+            'password_confirmation' => 'short',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors(['password']);
+});
+
+it('revokes other tokens on password change while preserving the current token', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'old-secret-password',
+    ]);
+
+    $currentToken = $user->createToken('current-device');
+    $otherToken1 = $user->createToken('other-device-1');
+    $otherToken2 = $user->createToken('other-device-2');
+
+    expect($user->tokens()->count())->toBe(3);
+
+    $this->withToken($currentToken->plainTextToken)
+        ->putJson('/api/v1/profile/password', [
+            'current_password' => 'old-secret-password',
+            'password' => 'new-secret-password',
+            'password_confirmation' => 'new-secret-password',
+        ])
+        ->assertOk();
+
+    expect($user->tokens()->count())->toBe(1)
+        ->and($user->tokens()->where('id', $currentToken->accessToken->id)->exists())->toBeTrue()
+        ->and($user->tokens()->where('id', $otherToken1->accessToken->id)->exists())->toBeFalse()
+        ->and($user->tokens()->where('id', $otherToken2->accessToken->id)->exists())->toBeFalse();
+});
+
+it('requires authentication to view own profile', function (): void {
+    $this->getJson('/api/v1/profile')->assertUnauthorized();
+});
+
+it('returns own profile via GET profile', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'name' => 'John Doe',
+        'username' => 'johndoe',
+        'email' => 'john@example.com',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->getJson('/api/v1/profile')
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.id', $user->id)
+        ->assertJsonPath('data.name', 'John Doe')
+        ->assertJsonPath('data.username', 'johndoe')
+        ->assertJsonPath('data.email', 'john@example.com');
+});
+
+it('updates profile name and username without altering email or verification', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'name' => 'Original Name',
+        'username' => 'original_user',
+        'email' => 'keep@example.com',
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile', [
+            'name' => 'New Name',
+            'username' => 'new_user',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Profile updated successfully')
+        ->assertJsonPath('data.name', 'New Name')
+        ->assertJsonPath('data.username', 'new_user');
+
+    $fresh = $user->fresh();
+    expect($fresh->name)->toBe('New Name')
+        ->and($fresh->username)->toBe('new_user')
+        ->and($fresh->email)->toBe('keep@example.com')
+        ->and($fresh->hasVerifiedEmail())->toBeTrue();
+});
+
+it('resets email verification and dispatches OTP when email is updated', function (): void {
+    Notification::fake();
+
+    $user = User::factory()->withRole(Roles::User)->create([
+        'email' => 'old_email@example.com',
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile', [
+            'email' => 'new_email@example.com',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.email', 'new_email@example.com')
+        ->assertJsonPath('data.email_verified', false);
+
+    $fresh = $user->fresh();
+    expect($fresh->email)->toBe('new_email@example.com')
+        ->and($fresh->hasVerifiedEmail())->toBeFalse();
+
+    Notification::assertSentTo($user, EmailVerificationOtpNotification::class);
+});
+
+it('rejects profile update with duplicate username or email', function (): void {
+    $existing = User::factory()->create([
+        'username' => 'taken_name',
+        'email' => 'taken@example.com',
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile', [
+            'username' => 'taken_name',
+            'email' => 'taken@example.com',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors(['username', 'email']);
 });
