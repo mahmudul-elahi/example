@@ -571,3 +571,127 @@ it('rejects profile update with duplicate username or email', function (): void 
         ->assertJsonPath('success', false)
         ->assertJsonValidationErrors(['username', 'email']);
 });
+
+it('updates user personal details: date of birth, phone number, and location', function (): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile', [
+            'date_of_birth' => '1995-06-15',
+            'phone_number' => '+15551234567',
+            'location' => 'San Francisco, CA',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.date_of_birth', '1995-06-15')
+        ->assertJsonPath('data.phone_number', '+15551234567')
+        ->assertJsonPath('data.location', 'San Francisco, CA');
+
+    $fresh = $user->fresh();
+    expect($fresh->date_of_birth?->format('Y-m-d'))->toBe('1995-06-15')
+        ->and($fresh->phone_number)->toBe('+15551234567')
+        ->and($fresh->location)->toBe('San Francisco, CA');
+});
+
+it('updates user preferences for theme, language, timezone, privacy, and notifications', function (): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/v1/profile/preferences', [
+            'theme' => 'dark',
+            'language' => 'fr',
+            'timezone' => 'America/New_York',
+            'privacy' => [
+                'profile_visibility' => 'private',
+                'default_memorial_visibility' => 'private',
+                'allow_memorial_comments' => false,
+            ],
+            'notifications' => [
+                'email_comments' => false,
+                'email_marketing' => true,
+            ],
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Preferences updated successfully')
+        ->assertJsonPath('data.preferences.theme', 'dark')
+        ->assertJsonPath('data.preferences.language', 'fr')
+        ->assertJsonPath('data.preferences.timezone', 'America/New_York')
+        ->assertJsonPath('data.preferences.privacy.profile_visibility', 'private')
+        ->assertJsonPath('data.preferences.privacy.default_memorial_visibility', 'private')
+        ->assertJsonPath('data.preferences.privacy.allow_memorial_comments', false)
+        ->assertJsonPath('data.preferences.notifications.email_comments', false)
+        ->assertJsonPath('data.preferences.notifications.email_marketing', true)
+        ->assertJsonPath('data.preferences.notifications.email_likes', true); // retains default true
+
+    $fresh = $user->fresh();
+    expect($fresh->resolvedPreferences()['theme'])->toBe('dark')
+        ->and($fresh->resolvedPreferences()['privacy']['profile_visibility'])->toBe('private');
+});
+
+it('exports all user data as structured json', function (): void {
+    $user = User::factory()->create();
+    PetMemorial::factory()->for($user)->create();
+    Story::factory()->for($user)->create();
+
+    $response = $this->actingAs($user, 'sanctum')
+        ->getJson('/api/v1/profile/export')
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'User data exported successfully')
+        ->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                'exported_at',
+                'profile' => ['id', 'name', 'email'],
+                'memorials',
+                'stories',
+                'comments',
+            ],
+        ]);
+
+    expect($response->json('data.memorials'))->toHaveCount(1)
+        ->and($response->json('data.stories'))->toHaveCount(1);
+});
+
+it('allows user to delete their own account with valid password and confirmation', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'secret-password-123',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->deleteJson('/api/v1/profile', [
+            'password' => 'secret-password-123',
+            'confirmation' => 'DELETE',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Account deleted successfully');
+
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+});
+
+it('rejects self account deletion with wrong password or confirmation', function (): void {
+    $user = User::factory()->withRole(Roles::User)->create([
+        'password' => 'secret-password-123',
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->deleteJson('/api/v1/profile', [
+            'password' => 'wrong-password',
+            'confirmation' => 'DELETE',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['password']);
+
+    $this->actingAs($user, 'sanctum')
+        ->deleteJson('/api/v1/profile', [
+            'password' => 'secret-password-123',
+            'confirmation' => 'CANCEL',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['confirmation']);
+
+    $this->assertDatabaseHas('users', ['id' => $user->id]);
+});

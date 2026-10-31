@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Services\TwoFactorServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PragmaRX\Google2FA\Google2FA;
 
 uses(RefreshDatabase::class);
 
@@ -200,4 +202,87 @@ it('throttles repeated login attempts', function (): void {
     ])
         ->assertStatus(429)
         ->assertJsonPath('success', false);
+});
+
+it('triggers two factor authentication challenge when user has 2fa enabled', function (): void {
+    $user = User::factory()->create([
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+    ]);
+
+    $twoFactor = app(TwoFactorServiceInterface::class);
+    $twoFactor->enable($user);
+    $user->refresh();
+    $validCode = app(Google2FA::class)->getCurrentOtp($user->two_factor_secret);
+    $twoFactor->confirm($user, $validCode);
+
+    $user->refresh();
+    expect($user->hasTwoFactorEnabled())->toBeTrue();
+
+    // 1. Initial login without 2FA code returns two_factor_required: true and two_factor_token
+    $response = $this->postJson('/api/v1/auth/login', [
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+    ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.two_factor_required', true)
+        ->assertJsonPath('data.token', '')
+        ->assertJsonPath('data.user', null);
+
+    $twoFactorToken = (string) $response->json('data.two_factor_token');
+    expect($twoFactorToken)->not->toBeEmpty();
+
+    // 2. Reject challenge with invalid 2FA code
+    $this->postJson('/api/v1/auth/two-factor-challenge', [
+        'two_factor_token' => $twoFactorToken,
+        'code' => '000000',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('success', false)
+        ->assertJsonValidationErrors(['code']);
+
+    // 3. Complete challenge with valid TOTP code
+    $freshOtp = app(Google2FA::class)->getCurrentOtp($user->two_factor_secret);
+    $this->postJson('/api/v1/auth/two-factor-challenge', [
+        'two_factor_token' => $twoFactorToken,
+        'code' => $freshOtp,
+    ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.user.email', 'jane@example.com')
+        ->assertJsonStructure(['data' => ['user', 'token']]);
+});
+
+it('allows two factor login with recovery code', function (): void {
+    $user = User::factory()->create([
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+    ]);
+
+    $twoFactor = app(TwoFactorServiceInterface::class);
+    $twoFactor->enable($user);
+    $user->refresh();
+    $validCode = app(Google2FA::class)->getCurrentOtp($user->two_factor_secret);
+    $result = $twoFactor->confirm($user, $validCode);
+    $recoveryCode = $result['recovery_codes'][0];
+
+    $response = $this->postJson('/api/v1/auth/login', [
+        'email' => 'jane@example.com',
+        'password' => 'password123',
+    ])->assertOk();
+
+    $twoFactorToken = (string) $response->json('data.two_factor_token');
+
+    $this->postJson('/api/v1/auth/two-factor-challenge', [
+        'two_factor_token' => $twoFactorToken,
+        'recovery_code' => $recoveryCode,
+    ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.user.email', 'jane@example.com');
+
+    // The used recovery code is consumed and cannot be used again
+    $user->refresh();
+    expect($user->two_factor_recovery_codes)->not->toContain($recoveryCode);
 });

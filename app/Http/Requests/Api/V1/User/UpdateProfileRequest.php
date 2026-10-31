@@ -27,6 +27,9 @@ class UpdateProfileRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'username' => ['sometimes', 'required', 'string', 'min:3', 'max:30', 'alpha_dash', Rule::unique('users', 'username')->ignore($userId)],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
+            'date_of_birth' => ['sometimes', 'nullable', 'date', 'before:today'],
+            'phone_number' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'location' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
     }
 }

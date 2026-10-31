@@ -7,8 +7,10 @@ namespace App\Services;
 use App\Enums\Roles;
 use App\Models\User;
 use App\Repositories\UserRepositoryInterface;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -18,6 +20,7 @@ class AuthService implements AuthServiceInterface
         protected UserRepositoryInterface $users,
         protected EmailVerificationServiceInterface $emailVerification,
         protected DeviceDetectorServiceInterface $deviceDetector,
+        protected TwoFactorServiceInterface $twoFactor,
     ) {}
 
     /**
@@ -45,7 +48,7 @@ class AuthService implements AuthServiceInterface
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{user: User, token: string}
+     * @return array{user: User, token: string}|array{two_factor_required: true, two_factor_token: string}
      */
     public function login(array $data): array
     {
@@ -57,8 +60,75 @@ class AuthService implements AuthServiceInterface
             ]);
         }
 
+        if ($user->hasTwoFactorEnabled()) {
+            if (! empty($data['code'])) {
+                if (! $this->twoFactor->verifyCode($user, (string) $data['code'])) {
+                    throw ValidationException::withMessages([
+                        'code' => ['The provided two factor authentication code was invalid.'],
+                    ]);
+                }
+            } elseif (! empty($data['recovery_code'])) {
+                if (! $this->twoFactor->verifyRecoveryCode($user, (string) $data['recovery_code'])) {
+                    throw ValidationException::withMessages([
+                        'recovery_code' => ['The provided two factor recovery code was invalid.'],
+                    ]);
+                }
+            } else {
+                $challengeToken = Str::random(40);
+                Cache::put("two_factor:{$challengeToken}", $user->id, now()->addMinutes(10));
+
+                return [
+                    'two_factor_required' => true,
+                    'two_factor_token' => $challengeToken,
+                ];
+            }
+        }
+
         return [
             'user' => $user,
+            'token' => $this->issueToken($user, $data['device_name'] ?? null),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{user: User, token: string}
+     */
+    public function twoFactorChallenge(array $data): array
+    {
+        $challengeToken = (string) $data['two_factor_token'];
+        $userId = Cache::get("two_factor:{$challengeToken}");
+
+        if ($userId === null) {
+            throw ValidationException::withMessages([
+                'two_factor_token' => ['The two factor authentication session has expired or is invalid.'],
+            ]);
+        }
+
+        $user = $this->users->find((int) $userId);
+
+        if (! empty($data['code'])) {
+            if (! $this->twoFactor->verifyCode($user, (string) $data['code'])) {
+                throw ValidationException::withMessages([
+                    'code' => ['The provided two factor authentication code was invalid.'],
+                ]);
+            }
+        } elseif (! empty($data['recovery_code'])) {
+            if (! $this->twoFactor->verifyRecoveryCode($user, (string) $data['recovery_code'])) {
+                throw ValidationException::withMessages([
+                    'recovery_code' => ['The provided two factor recovery code was invalid.'],
+                ]);
+            }
+        } else {
+            throw ValidationException::withMessages([
+                'code' => ['A verification code or recovery code is required.'],
+            ]);
+        }
+
+        Cache::forget("two_factor:{$challengeToken}");
+
+        return [
+            'user' => $this->users->loadRoles($user),
             'token' => $this->issueToken($user, $data['device_name'] ?? null),
         ];
     }

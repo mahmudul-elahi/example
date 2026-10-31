@@ -155,7 +155,14 @@ class UserService implements UserServiceInterface
      */
     public function updateProfile(User $user, array $data): User
     {
-        $filtered = array_intersect_key($data, array_flip(['name', 'username', 'email']));
+        $filtered = array_intersect_key($data, array_flip([
+            'name',
+            'username',
+            'email',
+            'date_of_birth',
+            'phone_number',
+            'location',
+        ]));
         $emailChanged = isset($filtered['email']) && $filtered['email'] !== $user->email;
 
         $updatedUser = $this->update($user, $filtered);
@@ -177,6 +184,40 @@ class UserService implements UserServiceInterface
                 $user->tokens()->where('id', '!=', $currentTokenId)->delete();
             }
         });
+    }
+
+    public function updatePreferences(User $user, array $preferences): User
+    {
+        $current = $user->resolvedPreferences();
+        $merged = array_replace_recursive($current, $preferences);
+
+        $user->forceFill(['preferences' => $merged])->save();
+
+        return $user;
+    }
+
+    public function deleteAccount(User $user): void
+    {
+        if ($user->isAdmin() && ! $this->repository->hasOtherAdmin($user)) {
+            throw ValidationException::withMessages([
+                'user' => ['The last administrator account cannot be deleted.'],
+            ]);
+        }
+
+        $files = array_values(array_filter([
+            $user->avatar,
+            ...$this->repository->authoredMediaFiles($user),
+        ]));
+
+        DB::transaction(function () use ($user): void {
+            $user->tokens()->delete();
+            $user->notifications()->delete();
+            $this->repository->delete($user);
+        });
+
+        foreach ($files as $file) {
+            Storage::delete($file);
+        }
     }
 
     public function delete(User $user, User $actor): void

@@ -45,5 +45,12 @@ interface UserServiceInterface
 
     public function changePassword(User $user, string $newPassword): void;
 
+    /**
+     * @param  array<string, mixed>  $preferences
+     */
+    public function updatePreferences(User $user, array $preferences): User;
+
+    public function deleteAccount(User $user): void;
+
     public function delete(User $user, User $actor): void;
 }

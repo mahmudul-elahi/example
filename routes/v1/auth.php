@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function (): void {
     Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('two-factor-challenge', [AuthController::class, 'twoFactorChallenge'])->middleware('throttle:login');
 
     Route::prefix('passkeys')->group(function (): void {
         Route::post('login/options', [PasskeyController::class, 'loginOptions'])->middleware('throttle:passkey-login');

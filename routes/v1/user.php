@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\User\MessageController;
 use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\PetMemorialController;
 use App\Http\Controllers\Api\V1\User\StoryController;
+use App\Http\Controllers\Api\V1\User\TwoFactorController;
 use App\Http\Controllers\Api\V1\User\UserProfileController;
 use App\Http\Controllers\Api\V1\User\UserSessionController;
 use Illuminate\Support\Facades\Route;
@@ -54,9 +55,17 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function (): void {
 
     Route::get('profile', [UserProfileController::class, 'profile']);
     Route::put('profile', [UserProfileController::class, 'update']);
+    Route::put('profile/preferences', [UserProfileController::class, 'updatePreferences']);
+    Route::get('profile/export', [UserProfileController::class, 'exportData']);
+    Route::delete('profile', [UserProfileController::class, 'destroy']);
     Route::get('profile/stats', [UserProfileController::class, 'stats']);
     Route::post('profile/avatar', [UserProfileController::class, 'updateAvatar']);
     Route::put('profile/password', [UserProfileController::class, 'updatePassword']);
+
+    Route::post('profile/two-factor/enable', [TwoFactorController::class, 'enable']);
+    Route::post('profile/two-factor/confirm', [TwoFactorController::class, 'confirm']);
+    Route::post('profile/two-factor/disable', [TwoFactorController::class, 'disable']);
+    Route::post('profile/two-factor/recovery-codes', [TwoFactorController::class, 'recoveryCodes']);
 
     Route::get('profile/sessions', [UserSessionController::class, 'index']);
     Route::delete('profile/sessions', [UserSessionController::class, 'destroyOthers']);

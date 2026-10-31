@@ -20,9 +20,15 @@ interface AuthServiceInterface
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{user: User, token: string}
+     * @return array{user: User, token: string}|array{two_factor_required: true, two_factor_token: string}
      */
     public function login(array $data): array;
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{user: User, token: string}
+     */
+    public function twoFactorChallenge(array $data): array;
 
     public function logout(User $user): void;
 

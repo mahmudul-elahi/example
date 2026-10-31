@@ -27,8 +27,21 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property-read string|null $role
  */
-#[Fillable(['name', 'username', 'email', 'password', 'avatar'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable([
+    'name',
+    'username',
+    'email',
+    'password',
+    'avatar',
+    'date_of_birth',
+    'phone_number',
+    'location',
+    'preferences',
+    'two_factor_secret',
+    'two_factor_recovery_codes',
+    'two_factor_confirmed_at',
+])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 #[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
@@ -44,8 +57,44 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'date_of_birth' => 'date',
             'password' => 'hashed',
+            'preferences' => 'array',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret !== null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function resolvedPreferences(): array
+    {
+        $defaults = [
+            'theme' => 'system', // 'light', 'dark', 'system'
+            'language' => 'en',
+            'timezone' => 'UTC',
+            'privacy' => [
+                'profile_visibility' => 'public', // 'public', 'private'
+                'default_memorial_visibility' => 'public', // 'public', 'private'
+                'allow_memorial_comments' => true,
+            ],
+            'notifications' => [
+                'email_comments' => true,
+                'email_likes' => true,
+                'email_friend_requests' => true,
+                'email_marketing' => false,
+                'in_app_alerts' => true,
+            ],
+        ];
+
+        return array_replace_recursive($defaults, $this->preferences ?? []);
     }
 
     /**

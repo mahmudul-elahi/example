@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\ChangePasswordRequest;
+use App\Http\Requests\Api\V1\User\DeleteAccountRequest;
 use App\Http\Requests\Api\V1\User\IndexPetMemorialRequest;
 use App\Http\Requests\Api\V1\User\IndexStoryRequest;
 use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
+use App\Http\Requests\Api\V1\User\UpdatePreferencesRequest;
 use App\Http\Requests\Api\V1\User\UpdateProfileRequest;
 use App\Http\Resources\V1\PetMemorialResource;
 use App\Http\Resources\V1\StoryResource;
@@ -18,6 +20,7 @@ use App\Models\User;
 use App\Services\BlockedUserServiceInterface;
 use App\Services\PetMemorialServiceInterface;
 use App\Services\StoryServiceInterface;
+use App\Services\UserDataExportServiceInterface;
 use App\Services\UserServiceInterface;
 use App\Traits\ApiResponse;
 use Dedoc\Scramble\Attributes\Group;
@@ -34,6 +37,7 @@ class UserProfileController extends Controller
         protected BlockedUserServiceInterface $blockedUsers,
         protected PetMemorialServiceInterface $memorials,
         protected StoryServiceInterface $stories,
+        protected UserDataExportServiceInterface $dataExport,
     ) {}
 
     public function show(User $user, #[CurrentUser] User $currentUser): JsonResponse
@@ -90,6 +94,27 @@ class UserProfileController extends Controller
         $this->userService->changePassword($currentUser, $request->newPassword());
 
         return $this->success(null, 'Password updated successfully');
+    }
+
+    public function updatePreferences(UpdatePreferencesRequest $request, #[CurrentUser] User $currentUser): JsonResponse
+    {
+        $user = $this->userService->updatePreferences($currentUser, $request->validated());
+
+        return $this->success(new UserResource($user), 'Preferences updated successfully');
+    }
+
+    public function exportData(#[CurrentUser] User $currentUser): JsonResponse
+    {
+        $data = $this->dataExport->exportData($currentUser);
+
+        return $this->success($data, 'User data exported successfully');
+    }
+
+    public function destroy(DeleteAccountRequest $request, #[CurrentUser] User $currentUser): JsonResponse
+    {
+        $this->userService->deleteAccount($currentUser);
+
+        return $this->success(null, 'Account deleted successfully');
     }
 
     public function stats(#[CurrentUser] User $currentUser): JsonResponse

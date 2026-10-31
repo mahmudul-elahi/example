@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterRequest;
+use App\Http\Requests\Api\V1\Auth\TwoFactorChallengeRequest;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
 use App\Services\AuthServiceInterface;
@@ -37,6 +38,21 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         $result = $this->auth->login($request->validated());
+
+        $isTwoFactor = isset($result['two_factor_required']) && $result['two_factor_required'] === true;
+        $message = $isTwoFactor ? 'Two factor authentication required' : 'Logged in successfully';
+
+        return $this->success([
+            'user' => ! empty($result['user']) ? new UserResource($result['user']) : null,
+            'token' => $result['token'] ?? '',
+            'two_factor_required' => $isTwoFactor,
+            'two_factor_token' => $result['two_factor_token'] ?? null,
+        ], $message);
+    }
+
+    public function twoFactorChallenge(TwoFactorChallengeRequest $request): JsonResponse
+    {
+        $result = $this->auth->twoFactorChallenge($request->validated());
 
         return $this->success([
             'user' => new UserResource($result['user']),
