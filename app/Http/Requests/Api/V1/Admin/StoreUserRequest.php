@@ -22,7 +22,7 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'string', Rule::in(Roles::values())],
             'email_verified' => ['sometimes', 'boolean'],
-            'avatar' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp'],
         ];
     }
 }

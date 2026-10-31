@@ -26,7 +26,7 @@ class UpdateUserRequest extends FormRequest
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
             'role' => ['sometimes', 'required', 'string', Rule::in(Roles::values())],
             'email_verified' => ['sometimes', 'boolean'],
-            'avatar' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp'],
         ];
     }
 }

@@ -37,7 +37,7 @@ class UpdateProductRequest extends FormRequest
             'sku' => ['sometimes', 'nullable', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($productId)],
             'stock' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', 'string', Rule::in(ProductStatus::values())],
-            'cover_image' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover_image' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp'],
         ];
     }
 

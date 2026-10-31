@@ -21,7 +21,7 @@ class SendMessageRequest extends FormRequest
 
         $fileRules = match ($type) {
             MessageType::Text->value => ['prohibited'],
-            MessageType::Image->value => ['required', 'file', 'max:25600', 'mimes:jpeg,png,webp,gif,heic'],
+            MessageType::Image->value => ['required', 'file', 'mimes:jpeg,png,webp,gif,heic'],
             MessageType::Audio->value => ['required', 'file', 'max:25600', 'mimes:mp3,wav,m4a,ogg,webm'],
             MessageType::File->value => ['required', 'file', 'max:25600', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,7z'],
             default => ['nullable', 'file', 'max:25600'],
