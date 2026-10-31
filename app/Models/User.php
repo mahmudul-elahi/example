@@ -80,11 +80,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'theme' => 'system', // 'light', 'dark', 'system'
             'language' => 'en',
             'timezone' => 'UTC',
-            'privacy' => [
-                'profile_visibility' => 'public', // 'public', 'private'
-                'default_memorial_visibility' => 'public', // 'public', 'private'
-                'allow_memorial_comments' => true,
-            ],
             'notifications' => [
                 'email_comments' => true,
                 'email_likes' => true,
@@ -94,7 +89,10 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             ],
         ];
 
-        return array_replace_recursive($defaults, $this->preferences ?? []);
+        $merged = array_replace_recursive($defaults, $this->preferences ?? []);
+        unset($merged['privacy']);
+
+        return $merged;
     }
 
     /**

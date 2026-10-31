@@ -593,7 +593,7 @@ it('updates user personal details: date of birth, phone number, and location', f
         ->and($fresh->location)->toBe('San Francisco, CA');
 });
 
-it('updates user preferences for theme, language, timezone, privacy, and notifications', function (): void {
+it('updates user preferences for theme, language, timezone, and notifications', function (): void {
     $user = User::factory()->create();
 
     $this->actingAs($user, 'sanctum')
@@ -601,11 +601,6 @@ it('updates user preferences for theme, language, timezone, privacy, and notific
             'theme' => 'dark',
             'language' => 'fr',
             'timezone' => 'America/New_York',
-            'privacy' => [
-                'profile_visibility' => 'private',
-                'default_memorial_visibility' => 'private',
-                'allow_memorial_comments' => false,
-            ],
             'notifications' => [
                 'email_comments' => false,
                 'email_marketing' => true,
@@ -617,16 +612,14 @@ it('updates user preferences for theme, language, timezone, privacy, and notific
         ->assertJsonPath('data.preferences.theme', 'dark')
         ->assertJsonPath('data.preferences.language', 'fr')
         ->assertJsonPath('data.preferences.timezone', 'America/New_York')
-        ->assertJsonPath('data.preferences.privacy.profile_visibility', 'private')
-        ->assertJsonPath('data.preferences.privacy.default_memorial_visibility', 'private')
-        ->assertJsonPath('data.preferences.privacy.allow_memorial_comments', false)
+        ->assertJsonMissingPath('data.preferences.privacy')
         ->assertJsonPath('data.preferences.notifications.email_comments', false)
         ->assertJsonPath('data.preferences.notifications.email_marketing', true)
         ->assertJsonPath('data.preferences.notifications.email_likes', true); // retains default true
 
     $fresh = $user->fresh();
     expect($fresh->resolvedPreferences()['theme'])->toBe('dark')
-        ->and($fresh->resolvedPreferences()['privacy']['profile_visibility'])->toBe('private');
+        ->and(array_key_exists('privacy', $fresh->resolvedPreferences()))->toBeFalse();
 });
 
 it('exports all user data as structured json', function (): void {

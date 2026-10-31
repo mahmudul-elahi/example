@@ -189,7 +189,9 @@ class UserService implements UserServiceInterface
     public function updatePreferences(User $user, array $preferences): User
     {
         $current = $user->resolvedPreferences();
+        unset($current['privacy'], $preferences['privacy']);
         $merged = array_replace_recursive($current, $preferences);
+        unset($merged['privacy']);
 
         $user->forceFill(['preferences' => $merged])->save();
 
