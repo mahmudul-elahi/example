@@ -383,3 +383,25 @@ it('updates a memorial using direct POST with multipart images', function (): vo
     expect($memorial->refresh()->body)->toBe('Direct post update.')
         ->and($memorial->images)->toHaveCount(1);
 });
+
+it('optimizes uploaded memorial images to webp format without file size limits', function (): void {
+    Storage::fake();
+
+    $user = User::factory()->withRole(Roles::User)->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->post('/api/v1/memorials', [
+            'body' => 'Optimized memory.',
+            'pet_name' => 'Charlie',
+            'images' => [
+                UploadedFile::fake()->image('charlie.png', 800, 600),
+            ],
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    $memorial = PetMemorial::query()->where('pet_name', 'Charlie')->firstOrFail();
+    $imagePath = $memorial->images->first()->path;
+
+    expect(str_ends_with($imagePath, '.webp'))->toBeTrue();
+    Storage::assertExists($imagePath);
+});

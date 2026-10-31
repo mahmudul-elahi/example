@@ -11,6 +11,7 @@ use App\Repositories\StoryRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -23,7 +24,17 @@ class StoryService implements StoryServiceInterface
 
     public function create(User $user, UploadedFile $media, ?string $caption): Story
     {
-        $mediaPath = $media->store('stories/'.$user->id);
+        $isImage = str_starts_with((string) $media->getMimeType(), 'image/');
+
+        if ($isImage) {
+            $path = Image::fromUpload($media)
+                ->scale(width: 2560)
+                ->optimize()
+                ->store('stories/'.$user->id);
+            $mediaPath = $path !== false ? $path : null;
+        } else {
+            $mediaPath = $media->store('stories/'.$user->id);
+        }
 
         if (! is_string($mediaPath)) {
             throw new RuntimeException('Unable to store the story media.');

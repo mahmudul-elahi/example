@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\ProductRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 
 class ProductService implements ProductServiceInterface
@@ -68,12 +69,17 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
-     * Store an uploaded cover image on the default disk, or clear the value.
+     * Store an uploaded cover image on the default disk with optimization, or clear the value.
      */
     private function storeCoverImage(mixed $cover): ?string
     {
         if ($cover instanceof UploadedFile) {
-            return $cover->store('products');
+            $path = Image::fromUpload($cover)
+                ->scale(width: 2560)
+                ->optimize()
+                ->store('products');
+
+            return $path !== false ? $path : null;
         }
 
         return is_string($cover) ? $cover : null;

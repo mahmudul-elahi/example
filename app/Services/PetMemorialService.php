@@ -10,6 +10,7 @@ use App\Repositories\PetMemorialRepositoryInterface;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Image;
 
 class PetMemorialService implements PetMemorialServiceInterface
 {
@@ -102,7 +103,7 @@ class PetMemorialService implements PetMemorialServiceInterface
     }
 
     /**
-     * Store uploaded memorial images on the default disk.
+     * Store uploaded memorial images on the default disk with optimization.
      *
      * @param  array<int, mixed>  $images
      */
@@ -110,8 +111,14 @@ class PetMemorialService implements PetMemorialServiceInterface
     {
         foreach ($images as $image) {
             if ($image instanceof UploadedFile) {
-                $path = $image->store('memorials');
-                $memorial->images()->create(['path' => $path]);
+                $path = Image::fromUpload($image)
+                    ->scale(width: 2560)
+                    ->optimize()
+                    ->store('memorials');
+
+                if ($path !== false) {
+                    $memorial->images()->create(['path' => $path]);
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\BlogPostRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 
 class BlogPostService implements BlogPostServiceInterface
@@ -110,12 +111,17 @@ class BlogPostService implements BlogPostServiceInterface
     }
 
     /**
-     * Store an uploaded cover image on the default disk, or clear the value.
+     * Store an uploaded cover image on the default disk with optimization, or clear the value.
      */
     private function storeCoverImage(mixed $cover): ?string
     {
         if ($cover instanceof UploadedFile) {
-            return $cover->store('blog');
+            $path = Image::fromUpload($cover)
+                ->scale(width: 2560)
+                ->optimize()
+                ->store('blog');
+
+            return $path !== false ? $path : null;
         }
 
         return is_string($cover) ? $cover : null;
