@@ -169,9 +169,12 @@ class PasskeyService implements PasskeyServiceInterface
             ]);
         }
 
+        $token = $user->createToken('Passkey: '.($passkey->name ?? 'Device'));
+        $token->accessToken->forceFill(['ip_address' => request()->ip()])->save();
+
         return [
             'user' => $this->users->loadRoles($user),
-            'token' => $user->createToken('auth-token')->plainTextToken,
+            'token' => $token->plainTextToken,
         ];
     }
 

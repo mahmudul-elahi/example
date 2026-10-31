@@ -17,6 +17,7 @@ class AuthService implements AuthServiceInterface
     public function __construct(
         protected UserRepositoryInterface $users,
         protected EmailVerificationServiceInterface $emailVerification,
+        protected DeviceDetectorServiceInterface $deviceDetector,
     ) {}
 
     /**
@@ -38,7 +39,7 @@ class AuthService implements AuthServiceInterface
 
         return [
             'user' => $user,
-            'token' => $user->createToken('auth-token')->plainTextToken,
+            'token' => $this->issueToken($user, $data['device_name'] ?? null),
         ];
     }
 
@@ -58,8 +59,20 @@ class AuthService implements AuthServiceInterface
 
         return [
             'user' => $user,
-            'token' => $user->createToken('auth-token')->plainTextToken,
+            'token' => $this->issueToken($user, $data['device_name'] ?? null),
         ];
+    }
+
+    protected function issueToken(User $user, ?string $customDeviceName = null): string
+    {
+        $deviceName = ! empty($customDeviceName) ? $customDeviceName : $this->deviceDetector->detect();
+        $token = $user->createToken($deviceName);
+
+        $token->accessToken->forceFill([
+            'ip_address' => request()->ip(),
+        ])->save();
+
+        return $token->plainTextToken;
     }
 
     public function logout(User $user): void
